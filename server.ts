@@ -103,6 +103,7 @@ async function startServer() {
       socket.join(roomCode.toUpperCase());
       
       player.connected = true;
+      room.checkHostTransfer();
       broadcastRoomState(room);
       callback({ success: true });
     });
@@ -197,7 +198,7 @@ async function startServer() {
        if (room) {
          const sessionId = socket.data.sessionId;
          const p = room.players.get(sessionId);
-         if (p) {
+         if (p && !p.isSpectator) {
            io.to(roomCode.toUpperCase()).emit('chat_message', {
              id: Math.random().toString(36).substring(7),
              playerId: p.id,
@@ -208,9 +209,12 @@ async function startServer() {
        }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       const sessionId = socket.data.sessionId;
       if (!sessionId) return;
+
+      const sockets = await io.in(sessionId).fetchSockets();
+      if (sockets.length > 0) return; // Player is still connected via another socket
       
       // Find all rooms this socket was in
       for (const room of rooms.values()) {
