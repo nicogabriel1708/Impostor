@@ -17,6 +17,7 @@ export interface Player {
   color: string;
   isHost: boolean;
   connected: boolean;
+  isSpectator?: boolean;
 }
 
 export interface GamePlayer extends Player {
