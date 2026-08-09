@@ -80,6 +80,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			setChatMessages((prev) => [...prev, msg]);
 		});
 
+		newSocket.on("clear_chat", () => {
+			setChatMessages([]);
+		});
+
 		newSocket.on("kicked", () => {
 			setError("You have been kicked by the host.");
 			setRoomCode(null);

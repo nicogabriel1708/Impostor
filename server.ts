@@ -248,6 +248,7 @@ async function startServer() {
 		});
 
 		socket.on("kick_player", ({ roomCode, targetId }) => {
+			console.log("KICK REQUEST", roomCode, targetId);
 			const sessionId = socket.data.sessionId;
 			if (!sessionId || !roomCode) return;
 
@@ -255,9 +256,13 @@ async function startServer() {
 			if (!room) return;
 
 			const me = room.players.get(sessionId);
-			if (!me || !me.isHost) return;
+			if (!me || !me.isHost) {
+				console.log("NOT HOST OR NO ME", me);
+				return;
+			}
 
 			if (room.players.has(targetId)) {
+				console.log("KICKING PLAYER", targetId);
 				room.removePlayer(targetId);
 				broadcastRoomState(room);
 				io.to(targetId).emit("kicked");
@@ -269,6 +274,8 @@ async function startServer() {
 						if (s) s.leave(room.code);
 					}
 				}
+			} else {
+				console.log("PLAYER NOT IN ROOM", targetId);
 			}
 		});
 
