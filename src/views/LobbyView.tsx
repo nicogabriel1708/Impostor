@@ -14,7 +14,7 @@ export function LobbyView() {
   const me = roomState.players.find(p => p.id === sessionId);
   const isHost = me?.isHost || false;
   
-  const canStart = roomState.players.length >= 1;
+  const canStart = roomState.players.length >= 3 && roomState.players.filter(p => !p.isSpectator).length >= 3;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(roomState.code);
@@ -62,7 +62,7 @@ export function LobbyView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-4 gap-x-3 gap-y-6 mb-8">
         {roomState.players.map(p => (
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
