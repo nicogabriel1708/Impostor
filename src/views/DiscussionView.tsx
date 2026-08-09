@@ -26,7 +26,7 @@ export function DiscussionView() {
 
   return (
     <div className="flex-1 flex flex-col relative h-full">
-      <div className="p-6 pb-4 bg-indigo-600 z-10 sticky top-0 shadow-md flex flex-col space-y-4">
+      <div className="p-6 pb-2 bg-indigo-600 z-10 sticky top-0 shadow-md flex flex-col space-y-4">
         <div className="flex justify-between items-center bg-indigo-700/50 p-4 rounded-3xl border-2 border-indigo-500/30">
           <div className="flex items-center space-x-2 text-indigo-200">
             <MessageSquare className="w-6 h-6" />
@@ -34,9 +34,26 @@ export function DiscussionView() {
           </div>
           <Timer endsAt={roomState.timerEndsAt} />
         </div>
-        <div className="bg-yellow-400 rounded-[20px] p-3 text-sm font-black text-indigo-900 text-center shadow-inner uppercase tracking-wider">
-          Talk it out! Who gave a suspicious clue?
-        </div>
+        
+        {roomState.clues && roomState.clues.length > 0 && (
+          <div className="flex space-x-3 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
+            {roomState.clues.map((c) => {
+              const p = roomState.players.find(player => player.id === c.playerId);
+              if (!p) return null;
+              return (
+                <div key={p.id} className="flex-shrink-0 bg-white/10 rounded-2xl p-2 flex items-center space-x-3 border border-white/20 min-w-max">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-inner border-2 border-white/50", p.color)}>
+                    {p.avatar}
+                  </div>
+                  <div className="flex flex-col pr-2">
+                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest leading-tight">{p.name}</span>
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">{c.clue}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
