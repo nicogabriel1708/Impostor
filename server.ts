@@ -256,9 +256,14 @@ async function startServer() {
 			if (!room) return;
 
 			const me = room.players.get(sessionId);
-			if (!me || !me.isHost) {
-				console.log("NOT HOST OR NO ME", me);
-				return;
+			if (!me) return;
+			if (!me.isHost) {
+				// Allow kick if the current host is not connected
+				const host = Array.from(room.players.values()).find((p) => p.isHost && p.connected);
+				if (host && host.id !== me.id) {
+					console.log("NOT HOST OR NO ME", me);
+					return;
+				}
 			}
 
 			if (room.players.has(targetId)) {

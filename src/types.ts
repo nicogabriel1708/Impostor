@@ -33,6 +33,7 @@ export interface GamePlayer extends Player {
 export interface ClueInfo {
 	playerId: string;
 	clue: string;
+	round?: number;
 }
 
 export interface VoteResult {
@@ -58,6 +59,7 @@ export interface ChatMessage {
 }
 
 export interface RoomState {
+	roundCount?: number;
 	code: string;
 	phase: GamePhase;
 	players: Player[];
@@ -78,5 +80,6 @@ export interface ClientRoomState extends RoomState {
 	myWord?: string | null;
 	myHint?: string | null;
 	myVote?: string | null;
+	secretCategory?: string;
 	hasVoted?: boolean;
 }
