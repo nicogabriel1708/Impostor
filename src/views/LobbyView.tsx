@@ -1,18 +1,19 @@
 import { ArrowLeft, Check, Copy, Crown, Play, Settings, Users } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { cn } from "../lib/utils";
 import { useGame } from "../store";
 import { CATEGORIES } from "../words";
 
 export function LobbyView() {
-	const { roomState, sessionId, updateSettings, startGame, leaveRoom } = useGame();
+	const { roomState, sessionId, updateSettings, startGame, leaveRoom, kickPlayer, isCreator } = useGame();
 	const [copied, setCopied] = useState(false);
+	const [menuPlayerId, setMenuPlayerId] = useState<string | null>(null);
 
 	if (!roomState) return null;
 
 	const me = roomState.players.find((p) => p.id === sessionId);
-	const isHost = me?.isHost || false;
+	const isHost = me?.isHost || isCreator || false;
 
 	const canStart = roomState.players.length >= 3 && roomState.players.filter((p) => !p.isSpectator).length >= 3;
 
@@ -70,14 +71,25 @@ export function LobbyView() {
 						initial={{ scale: 0.8, opacity: 0 }}
 						animate={{ scale: 1, opacity: 1 }}
 						key={p.id}
-						className="flex flex-col items-center space-y-2"
+						className={cn(
+							"flex flex-col items-center space-y-2 relative",
+							menuPlayerId === p.id ? "z-50" : "z-10",
+						)}
 					>
-						<div
+						<button
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								if (isHost && p.id !== sessionId) setMenuPlayerId(p.id);
+							}}
 							className={cn(
-								"w-16 h-16 text-3xl rounded-[20px] flex items-center justify-center shadow-lg border-2 relative",
+								"w-16 h-16 text-3xl rounded-[20px] flex items-center justify-center shadow-lg border-2 relative transition-transform",
 								p.color || "bg-indigo-800/50",
-								p.id === sessionId ? "border-white" : "border-indigo-900/20",
+								p.id === sessionId ? "border-white cursor-default" : "border-indigo-900/20",
 								!p.connected && "opacity-50 grayscale",
+								isHost && p.id !== sessionId
+									? "hover:scale-105 active:scale-95 cursor-pointer"
+									: "cursor-default",
 							)}
 						>
 							{p.avatar}
@@ -86,7 +98,7 @@ export function LobbyView() {
 									<Crown className="w-3 h-3" strokeWidth={3} />
 								</div>
 							)}
-						</div>
+						</button>
 						<span className="text-xs font-bold truncate w-full text-center text-indigo-100">{p.name}</span>
 					</motion.div>
 				))}
@@ -274,7 +286,7 @@ export function LobbyView() {
 												: "text-indigo-400",
 										)}
 									>
-										Play until Impostors lose.
+										Play until impostors win/lose.
 									</div>
 								</button>
 							</div>
@@ -286,7 +298,7 @@ export function LobbyView() {
 								<span className="text-xs text-indigo-400 font-bold">
 									{roomState.settings.roundMode === "short"
 										? "One vote only."
-										: "Play until Impostors lose."}
+										: "Play until impostors win/lose."}
 								</span>
 							</div>
 						)}
@@ -339,6 +351,49 @@ export function LobbyView() {
 					Waiting for host to start...
 				</div>
 			)}
+			<AnimatePresence>
+				{menuPlayerId && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							className="absolute inset-0 bg-indigo-900/60 backdrop-blur-sm"
+							onClick={() => setMenuPlayerId(null)}
+						/>
+						<motion.div
+							initial={{ scale: 0.9, opacity: 0, y: 20 }}
+							animate={{ scale: 1, opacity: 1, y: 0 }}
+							exit={{ scale: 0.9, opacity: 0, y: 20 }}
+							className="bg-white rounded-[30px] p-6 shadow-2xl z-10 w-full max-w-sm border-4 border-indigo-100 flex flex-col items-center"
+						>
+							<div className="w-20 h-20 text-4xl rounded-[24px] bg-indigo-100 flex items-center justify-center mb-4 shadow-inner">
+								{roomState.players.find((p) => p.id === menuPlayerId)?.avatar}
+							</div>
+							<h3 className="text-xl font-black text-indigo-900 uppercase tracking-wider mb-6 text-center">
+								Kick {roomState.players.find((p) => p.id === menuPlayerId)?.name}?
+							</h3>
+							<div className="flex space-x-3 w-full">
+								<button
+									onClick={() => setMenuPlayerId(null)}
+									className="flex-1 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-500 font-black rounded-2xl transition-colors uppercase tracking-widest text-sm"
+								>
+									Cancel
+								</button>
+								<button
+									onClick={() => {
+										kickPlayer(menuPlayerId);
+										setMenuPlayerId(null);
+									}}
+									className="flex-1 py-4 bg-pink-500 hover:bg-pink-600 text-white font-black rounded-2xl transition-colors shadow-lg border-b-4 border-pink-700 active:border-b-0 active:translate-y-1 uppercase tracking-widest text-sm"
+								>
+									Kick
+								</button>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

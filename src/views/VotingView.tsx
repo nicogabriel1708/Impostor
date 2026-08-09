@@ -21,14 +21,26 @@ export function VotingView() {
 
 	return (
 		<div className="flex-1 flex flex-col p-6 h-full relative">
-			<div className="flex justify-between items-center mb-6 bg-indigo-700/50 p-4 rounded-3xl border-2 border-indigo-500/30">
-				<div>
-					<h2 className="text-sm font-black tracking-widest text-indigo-200 uppercase">Voting Phase</h2>
-					<p className="text-xl font-black text-white mt-1 uppercase italic tracking-tighter">
-						{isSpectator ? "Spectating..." : "Who is the Impostor?"}
-					</p>
+			<div className="flex flex-col mb-6 space-y-4">
+				<div className="flex justify-between items-center bg-indigo-700/50 p-4 rounded-3xl border-2 border-indigo-500/30">
+					<div>
+						<h2 className="text-sm font-black tracking-widest text-indigo-200 uppercase">Voting Phase</h2>
+						<p className="text-xl font-black text-white mt-1 uppercase italic tracking-tighter">
+							{isSpectator ? "Spectating..." : "Who is the Impostor?"}
+						</p>
+					</div>
+					<Timer endsAt={roomState.timerEndsAt} />
 				</div>
-				<Timer endsAt={roomState.timerEndsAt} />
+				<div className="bg-indigo-900/40 p-3 rounded-2xl border-2 border-dashed border-indigo-500/50 flex flex-col items-center justify-center">
+					<span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+						{roomState.secretCategory || roomState.settings.category}
+					</span>
+					<span className="text-lg font-black text-white">
+						{roomState.myWord ||
+							roomState.myHint ||
+							(me?.isSpectator ? "Spectating" : "You are the Impostor")}
+					</span>
+				</div>
 			</div>
 
 			{hasVoted || isSpectator ? (

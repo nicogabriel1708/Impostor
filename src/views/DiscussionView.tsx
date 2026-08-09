@@ -1,4 +1,4 @@
-import { MessageSquare, Send } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquare, Send } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
 import { Timer } from "../components/Timer";
@@ -38,41 +38,19 @@ export function DiscussionView() {
 					<Timer endsAt={roomState.timerEndsAt} />
 				</div>
 
+				<div className="bg-indigo-900/40 p-3 rounded-2xl border-2 border-dashed border-indigo-500/50 flex flex-col items-center justify-center">
+					<span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+						{roomState.secretCategory || roomState.settings.category}
+					</span>
+					<span className="text-lg font-black text-white">
+						{roomState.myWord ||
+							roomState.myHint ||
+							(me?.isSpectator ? "Spectating" : "You are the Impostor")}
+					</span>
+				</div>
+
 				{roomState.clues && roomState.clues.length > 0 && (
-					<div className="flex space-x-3 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
-						{roomState.clues.map((c) => {
-							const p = roomState.players.find((player) => player.id === c.playerId);
-							if (!p) return null;
-							return (
-								<div
-									key={p.id}
-									className="flex-shrink-0 bg-white/10 rounded-2xl p-2 flex items-center space-x-3 border border-white/20 min-w-max"
-								>
-									<div
-										className={cn(
-											"w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-inner border-2 border-white/50",
-											p.color,
-										)}
-									>
-										{p.avatar}
-									</div>
-									<div className="flex flex-col pr-2">
-										<span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest leading-tight">
-											{p.name}
-										</span>
-										<span
-											className={cn(
-												"text-sm font-bold uppercase tracking-wider",
-												c.clue === "- Skipped -" ? "text-red-400" : "text-white",
-											)}
-										>
-											{c.clue}
-										</span>
-									</div>
-								</div>
-							);
-						})}
-					</div>
+					<CluesDropdown clues={roomState.clues} players={roomState.players} />
 				)}
 			</div>
 
@@ -145,6 +123,93 @@ export function DiscussionView() {
 					</form>
 				)}
 			</div>
+		</div>
+	);
+}
+
+function CluesDropdown({ clues, players }: { clues: any[]; players: any[] }) {
+	const [isOpen, setIsOpen] = useState(false);
+
+	const cluesByRound = clues.reduce(
+		(acc, clue) => {
+			const r = clue.round || 0;
+			if (!acc[r]) acc[r] = [];
+			acc[r].push(clue);
+			return acc;
+		},
+		{} as Record<number, typeof clues>,
+	);
+
+	const rounds = Object.keys(cluesByRound)
+		.map(Number)
+		.sort((a, b) => b - a);
+
+	return (
+		<div className="bg-indigo-900/40 rounded-2xl border-2 border-indigo-500/50 overflow-hidden">
+			<button
+				onClick={() => setIsOpen(!isOpen)}
+				className="w-full p-3 flex items-center justify-between text-indigo-200 hover:bg-indigo-800/50 transition-colors"
+			>
+				<span className="text-xs font-black uppercase tracking-widest">View All Clues ({clues.length})</span>
+				{isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+			</button>
+
+			<AnimatePresence>
+				{isOpen && (
+					<motion.div
+						initial={{ height: 0 }}
+						animate={{ height: "auto" }}
+						exit={{ height: 0 }}
+						className="overflow-hidden"
+					>
+						<div className="p-3 pt-0 max-h-48 overflow-y-auto space-y-4">
+							{rounds.map((round) => (
+								<div key={round} className="space-y-2">
+									<div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest border-b border-indigo-500/30 pb-1">
+										Round {round}
+									</div>
+									<div className="grid grid-cols-2 gap-2">
+										{cluesByRound[round].map((c: any, i: number) => {
+											const p = players.find((player) => player.id === c.playerId);
+											if (!p) return null;
+											return (
+												<div
+													key={i}
+													className="bg-indigo-800/40 rounded-xl p-2 flex items-center space-x-2 border border-indigo-500/30"
+												>
+													<div
+														className={cn(
+															"w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-inner",
+															p.color,
+														)}
+													>
+														{p.avatar}
+													</div>
+													<div className="flex flex-col min-w-0">
+														<span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest leading-tight truncate">
+															{p.name}
+														</span>
+														<span
+															className={cn(
+																"text-xs font-bold uppercase tracking-wider truncate",
+																c.clue === "- Skipped -"
+																	? "text-red-400"
+																	: "text-white",
+															)}
+														>
+															{c.clue}
+														</span>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							))}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

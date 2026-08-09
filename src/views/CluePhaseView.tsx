@@ -10,6 +10,7 @@ export function CluePhaseView() {
 	const [clueInput, setClueInput] = useState("");
 
 	if (!roomState) return null;
+	console.log("CluePhaseView roomState:", roomState.myWord, roomState.settings.category, roomState);
 
 	const isMyTurn = roomState.currentTurnPlayerId === sessionId;
 	const currentTurnPlayer = roomState.players.find((p) => p.id === roomState.currentTurnPlayerId);
@@ -31,60 +32,68 @@ export function CluePhaseView() {
 						<h2 className="text-sm font-black tracking-widest text-indigo-200 uppercase">
 							{me?.isSpectator ? "Spectating" : "Clue Phase"}
 						</h2>
-						{me?.role === "player" && !me?.isSpectator && roomState.myWord && (
-							<span className="text-xs font-bold text-yellow-300 mt-1 uppercase tracking-widest">
-								Word: <span className="text-white font-black">{roomState.myWord}</span>
-							</span>
-						)}
 					</div>
 					<Timer endsAt={roomState.timerEndsAt} />
+				</div>
+
+				<div className="bg-indigo-900/40 p-3 rounded-2xl border-2 border-dashed border-indigo-500/50 flex flex-col items-center justify-center mt-4">
+					<span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+						{roomState.secretCategory || roomState.settings.category}
+					</span>
+					<span className="text-lg font-black text-white">
+						{roomState.myWord ||
+							roomState.myHint ||
+							(me?.isSpectator ? "Spectating" : "You are the Impostor")}
+					</span>
 				</div>
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
 				<AnimatePresence initial={false}>
-					{roomState.clues.map((c, i) => {
-						const p = roomState.players.find((player) => player.id === c.playerId);
-						return (
-							<motion.div
-								key={i}
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								className={cn(
-									"p-4 rounded-[20px] flex items-start space-x-3 shadow-md border-2",
-									c.playerId === sessionId
-										? "bg-indigo-500 border-indigo-400"
-										: "bg-white border-indigo-100 text-indigo-900",
-								)}
-							>
-								<div className="w-12 h-12 rounded-[16px] bg-indigo-100/50 flex items-center justify-center text-2xl shrink-0 shadow-inner">
-									{p?.avatar}
-								</div>
-								<div className="flex-1 min-w-0">
-									<div
-										className={cn(
-											"text-xs font-black uppercase tracking-widest mb-1",
-											c.playerId === sessionId ? "text-indigo-200" : "text-indigo-400",
-										)}
-									>
-										{p?.name}
+					{(roomState.clues || [])
+						.filter((c) => c.round === (roomState.roundCount || 1))
+						.map((c, i) => {
+							const p = roomState.players.find((player) => player.id === c.playerId);
+							return (
+								<motion.div
+									key={i}
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									className={cn(
+										"p-4 rounded-[20px] flex items-start space-x-3 shadow-md border-2",
+										c.playerId === sessionId
+											? "bg-indigo-500 border-indigo-400"
+											: "bg-white border-indigo-100 text-indigo-900",
+									)}
+								>
+									<div className="w-12 h-12 rounded-[16px] bg-indigo-100/50 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+										{p?.avatar}
 									</div>
-									<div
-										className={cn(
-											"text-xl font-black break-words",
-											c.clue === "- Skipped -"
-												? "text-red-500"
-												: c.playerId === sessionId
-													? "text-white"
-													: "text-indigo-900",
-										)}
-									>
-										{c.clue}
+									<div className="flex-1 min-w-0">
+										<div
+											className={cn(
+												"text-xs font-black uppercase tracking-widest mb-1",
+												c.playerId === sessionId ? "text-indigo-200" : "text-indigo-400",
+											)}
+										>
+											{p?.name}
+										</div>
+										<div
+											className={cn(
+												"text-xl font-black break-words",
+												c.clue === "- Skipped -"
+													? "text-red-500"
+													: c.playerId === sessionId
+														? "text-white"
+														: "text-indigo-900",
+											)}
+										>
+											{c.clue}
+										</div>
 									</div>
-								</div>
-							</motion.div>
-						);
-					})}
+								</motion.div>
+							);
+						})}
 				</AnimatePresence>
 
 				{currentTurnPlayer && (
