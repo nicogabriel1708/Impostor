@@ -18,3 +18,4 @@ View your app in AI Studio: https://ai.studio/apps/7e639ac0-c122-43c2-9bf5-05857
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+# Impostor
