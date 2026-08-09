@@ -1,384 +1,425 @@
-import { Server } from "socket.io";
-import {
-	ClientRoomState,
-	ClueInfo,
-	GamePhase,
-	GamePlayer,
-	GameSettings,
-	RevealResult,
-	RoomState,
-	VoteResult,
-} from "../src/types";
-import { CATEGORIES } from "../src/words";
+import { v4 as uuidv4 } from 'uuid';
+import { GamePhase, GamePlayer, GameSettings, RoomState, RevealResult, ClueInfo, ClientRoomState, HintMode, Player, VoteResult } from '../src/types';
+import { CATEGORIES } from '../src/words';
+import { Server, Socket } from 'socket.io';
 
 const ROOM_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour inactivity
 const DISCONNECT_GRACE_PERIOD_MS = 2 * 60 * 1000; // 2 minutes
 
 export class Room {
-	code: string;
-	phase: GamePhase = "Lobby";
-	players: Map<string, GamePlayer> = new Map();
-	settings: GameSettings = {
-		impostorCount: 1,
-		category: "All",
-		clueTimeLimit: 30,
-		discussionTimeLimit: 60,
-		hintMode: "none",
-	};
+  code: string;
+  phase: GamePhase = 'Lobby';
+  players: Map<string, GamePlayer> = new Map();
+  settings: GameSettings = {
+    impostorCount: 1,
+    category: 'All',
+    clueTimeLimit: 30,
+    discussionTimeLimit: 60,
+    hintMode: 'none',
+    roundMode: 'short',
+  };
+  
+  timerEndsAt: number | null = null;
+  currentTurnPlayerId: string | null = null;
+  clues: ClueInfo[] = [];
+  
+  secretWord: string = '';
+  secretVagueHint: string = '';
+  
+  revealResult: RevealResult | null = null;
+  
+  turnQueue: string[] = [];
+  
+  lastActivityAt: number = Date.now();
+  timerTimeout: NodeJS.Timeout | null = null;
+  
+  io: Server;
 
-	timerEndsAt: number | null = null;
-	currentTurnPlayerId: string | null = null;
-	clues: ClueInfo[] = [];
+  constructor(code: string, io: Server) {
+    this.code = code;
+    this.io = io;
+  }
 
-	secretWord: string = "";
-	secretVagueHint: string = "";
+  touch() {
+    this.lastActivityAt = Date.now();
+  }
 
-	revealResult: RevealResult | null = null;
+  get state(): RoomState {
+    return {
+      code: this.code,
+      phase: this.phase,
+      players: Array.from(this.players.values()),
+      settings: this.settings,
+      timerEndsAt: this.timerEndsAt,
+      currentTurnPlayerId: this.currentTurnPlayerId,
+      clues: this.clues,
+      revealResult: this.revealResult,
+    };
+  }
 
-	turnQueue: string[] = [];
+  getClientState(playerId: string): ClientRoomState {
+    const player = this.players.get(playerId);
+    const hasVoted = player ? player.vote !== null : false;
+    return {
+      ...this.state,
+      players: this.state.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        color: p.color,
+        isHost: p.isHost,
+        connected: p.connected,
+        isSpectator: p.isSpectator,
+      })),
+      myRole: player?.role,
+      myWord: player?.word,
+      myHint: player?.hint,
+      myVote: player?.vote,
+      hasVoted,
+    };
+  }
 
-	lastActivityAt: number = Date.now();
-	timerTimeout: NodeJS.Timeout | null = null;
+  broadcastState() {
+    for (const [playerId, player] of this.players.entries()) {
+      // If we stored socketIds, we could emit directly.
+      // Easiest is to send to the room, but we need custom state per player.
+      // Wait, we can emit to specific sockets. Let's just emit to everyone in the room individually.
+    }
+  }
 
-	io: Server;
+  setPhase(phase: GamePhase, durationSec?: number) {
+    this.phase = phase;
+    
+    if (phase === 'Lobby') {
+      for (const p of this.players.values()) {
+        if (p.connected) p.isSpectator = false;
+      }
+    }
 
-	constructor(code: string, io: Server) {
-		this.code = code;
-		this.io = io;
-	}
+    if (this.timerTimeout) clearTimeout(this.timerTimeout);
+    
+    if (durationSec) {
+      this.timerEndsAt = Date.now() + durationSec * 1000;
+      this.timerTimeout = setTimeout(() => this.handleTimerExpiry(), durationSec * 1000);
+    } else {
+      this.timerEndsAt = null;
+      this.timerTimeout = null;
+    }
+  }
 
-	touch() {
-		this.lastActivityAt = Date.now();
-	}
+  handleTimerExpiry() {
+    if (this.phase === 'RoleReveal') {
+      this.startCluePhase();
+    } else if (this.phase === 'CluePhase') {
+      this.nextTurn(); // auto-skip player
+    } else if (this.phase === 'Discussion') {
+      this.startVotingPhase();
+    } else if (this.phase === 'Voting') {
+      this.tallyVotes();
+    }
+  }
 
-	get state(): RoomState {
-		return {
-			code: this.code,
-			phase: this.phase,
-			players: Array.from(this.players.values()),
-			settings: this.settings,
-			timerEndsAt: this.timerEndsAt,
-			currentTurnPlayerId: this.currentTurnPlayerId,
-			clues: this.clues,
-			revealResult: this.revealResult,
-		};
-	}
+  addPlayer(id: string, name: string, avatar: string, color: string) {
+    this.touch();
+    const isHost = this.players.size === 0;
+    this.players.set(id, {
+      id,
+      name,
+      avatar,
+      color,
+      isHost,
+      connected: true,
+      isSpectator: this.phase !== 'Lobby',
+      role: 'player',
+      word: null,
+      hint: null,
+      clue: null,
+      vote: null,
+    });
+  }
 
-	getClientState(playerId: string): ClientRoomState {
-		const player = this.players.get(playerId);
-		const hasVoted = player ? player.vote !== null : false;
-		return {
-			...this.state,
-			players: this.state.players.map((p) => ({
-				id: p.id,
-				name: p.name,
-				avatar: p.avatar,
-				color: p.color,
-				isHost: p.isHost,
-				connected: p.connected,
-				isSpectator: p.isSpectator,
-			})),
-			myRole: player?.role,
-			myWord: player?.word,
-			myHint: player?.hint,
-			myVote: player?.vote,
-			hasVoted,
-		};
-	}
+  checkHostTransfer() {
+    const playersArr = Array.from(this.players.values());
+    if (playersArr.length === 0) return;
+    
+    // If there is no connected host, find the first connected player to be host
+    const connectedHost = playersArr.find(p => p.isHost && p.connected);
+    if (!connectedHost) {
+      playersArr.forEach(p => p.isHost = false); // remove host from offline players
+      const nextHost = playersArr.find(p => p.connected);
+      if (nextHost) {
+        nextHost.isHost = true;
+        this.io.to(this.code.toUpperCase()).emit('chat_message', {
+          id: Math.random().toString(36).substring(7),
+          playerId: 'system',
+          text: `${nextHost.name} is now the room host.`,
+          timestamp: Date.now()
+        });
+      } else {
+        // If no one is connected, just let the first one be host
+        playersArr[0].isHost = true;
+      }
+    }
+  }
 
-	broadcastState() {
-		for (const [playerId, player] of this.players.entries()) {
-			// If we stored socketIds, we could emit directly.
-			// Easiest is to send to the room, but we need custom state per player.
-			// Wait, we can emit to specific sockets. Let's just emit to everyone in the room individually.
-		}
-	}
+  removePlayer(id: string) {
+    this.players.delete(id);
+    this.checkHostTransfer();
+  }
 
-	setPhase(phase: GamePhase, durationSec?: number) {
-		this.phase = phase;
+  startGame() {
+    const activePlayers = Array.from(this.players.values()).filter(p => !p.isSpectator);
+    if (activePlayers.length < 3) return;
+    this.touch();
+    
+    // Reset player states
+    for (const player of this.players.values()) {
+      player.clue = null;
+      player.vote = null;
+    }
+    this.clues = [];
+    this.revealResult = null;
+    
+    // Pick word
+    let words: any[] = [];
+    if (this.settings.category === 'All') {
+      words = Object.values(CATEGORIES).flat();
+    } else {
+      words = CATEGORIES[this.settings.category];
+    }
+    
+    if (!words || words.length === 0) return;
+    const wordEntry = words[Math.floor(Math.random() * words.length)];
+    this.secretWord = wordEntry.word;
+    this.secretVagueHint = wordEntry.vagueHint;
+    
+    // Assign roles
+    const playerIds = activePlayers.map(p => p.id);
+    for (let i = playerIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
+    }
+    
+    let impostorCount = Math.min(this.settings.impostorCount, Math.floor(playerIds.length / 2) || 1);
+    
+    for (let i = 0; i < playerIds.length; i++) {
+      const p = this.players.get(playerIds[i])!;
+      if (i < impostorCount) {
+        p.role = 'impostor';
+        p.word = null;
+        if (this.settings.hintMode === 'category') {
+          p.hint = `Category: ${this.settings.category}`;
+        } else if (this.settings.hintMode === 'vague') {
+          p.hint = `Hint: ${this.secretVagueHint}`;
+        } else {
+          p.hint = null;
+        }
+      } else {
+        p.role = 'player';
+        p.word = this.secretWord;
+        p.hint = null;
+      }
+    }
 
-		if (phase === "Lobby") {
-			for (const p of this.players.values()) {
-				if (p.connected) p.isSpectator = false;
-			}
-		}
+    // Explicitly reset spectators roles just in case
+    for (const p of this.players.values()) {
+      if (p.isSpectator) {
+        p.role = 'player';
+        p.word = null;
+        p.hint = null;
+      }
+    }
+    
+    this.setPhase('RoleReveal', 8);
+  }
 
-		if (this.timerTimeout) clearTimeout(this.timerTimeout);
+  startCluePhase() {
+    this.touch();
+    // Build turn queue
+    const activePlayers = Array.from(this.players.values()).filter(p => !p.isSpectator);
+    this.turnQueue = activePlayers.map(p => p.id);
+    for (let i = this.turnQueue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.turnQueue[i], this.turnQueue[j]] = [this.turnQueue[j], this.turnQueue[i]];
+    }
+    
+    this.clues = [];
+    this.nextTurn(true);
+  }
 
-		if (durationSec) {
-			this.timerEndsAt = Date.now() + durationSec * 1000;
-			this.timerTimeout = setTimeout(() => this.handleTimerExpiry(), durationSec * 1000);
-		} else {
-			this.timerEndsAt = null;
-			this.timerTimeout = null;
-		}
-	}
+  nextTurn(first = false) {
+    if (!first) {
+      // Mark current player as skipped if they didn't submit
+      if (this.currentTurnPlayerId) {
+        const p = this.players.get(this.currentTurnPlayerId);
+        if (p && !p.clue) {
+          p.clue = '- Skipped -';
+          this.clues.push({ playerId: p.id, clue: p.clue });
+        }
+      }
+    }
+    
+    if (this.turnQueue.length === 0) {
+      this.currentTurnPlayerId = null;
+      this.startDiscussionPhase();
+      return;
+    }
+    
+    this.currentTurnPlayerId = this.turnQueue.shift()!;
+    this.setPhase('CluePhase', this.settings.clueTimeLimit);
+  }
 
-	handleTimerExpiry() {
-		if (this.phase === "RoleReveal") {
-			this.startCluePhase();
-		} else if (this.phase === "CluePhase") {
-			this.nextTurn(); // auto-skip player
-		} else if (this.phase === "Discussion") {
-			this.startVotingPhase();
-		} else if (this.phase === "Voting") {
-			this.tallyVotes();
-		}
-	}
+  submitClue(playerId: string, clue: string) {
+    if (this.phase !== 'CluePhase' || this.currentTurnPlayerId !== playerId) return;
+    this.touch();
+    
+    const p = this.players.get(playerId);
+    if (p) {
+      p.clue = clue.trim().substring(0, 30);
+      this.clues.push({ playerId: p.id, clue: p.clue });
+    }
+    this.nextTurn();
+  }
 
-	addPlayer(id: string, name: string, avatar: string, color: string) {
-		this.touch();
-		const isHost = this.players.size === 0;
-		this.players.set(id, {
-			id,
-			name,
-			avatar,
-			color,
-			isHost,
-			connected: true,
-			isSpectator: this.phase !== "Lobby",
-			role: "player",
-			word: null,
-			hint: null,
-			clue: null,
-			vote: null,
-		});
-	}
+  startDiscussionPhase() {
+    this.setPhase('Discussion', this.settings.discussionTimeLimit);
+  }
 
-	checkHostTransfer() {
-		const playersArr = Array.from(this.players.values());
-		if (playersArr.length === 0) return;
+  startVotingPhase() {
+    this.setPhase('Voting', 30); // 30 sec to vote
+  }
 
-		// If there is no connected host, find the first connected player to be host
-		const connectedHost = playersArr.find((p) => p.isHost && p.connected);
-		if (!connectedHost) {
-			playersArr.forEach((p) => (p.isHost = false)); // remove host from offline players
-			const nextHost = playersArr.find((p) => p.connected);
-			if (nextHost) {
-				nextHost.isHost = true;
-				this.io.to(this.code.toUpperCase()).emit("chat_message", {
-					id: Math.random().toString(36).substring(7),
-					playerId: "system",
-					text: `${nextHost.name} is now the room host.`,
-					timestamp: Date.now(),
-				});
-			} else {
-				// If no one is connected, just let the first one be host
-				playersArr[0].isHost = true;
-			}
-		}
-	}
+  submitVote(playerId: string, votedForId: string | null) {
+    if (this.phase !== 'Voting') return;
+    this.touch();
+    
+    const p = this.players.get(playerId);
+    if (p && !p.isSpectator) {
+      p.vote = votedForId || 'skip';
+    }
+    
+    // Check if everyone voted
+    const activePlayers = Array.from(this.players.values()).filter(player => !player.isSpectator);
+    if (activePlayers.every(player => player.vote !== null)) {
+      this.tallyVotes();
+    }
+  }
 
-	removePlayer(id: string) {
-		this.players.delete(id);
-		this.checkHostTransfer();
-	}
+  tallyVotes() {
+    if (this.phase === 'Reveal') return; // prevent double tally
 
-	startGame() {
-		const activePlayers = Array.from(this.players.values()).filter((p) => !p.isSpectator);
-		if (activePlayers.length < 3) return;
-		this.touch();
+    // Force skip for players who didn't vote
+    const activePlayers = Array.from(this.players.values()).filter(p => !p.isSpectator);
+    for (const p of activePlayers) {
+      if (p.vote === null) {
+        p.vote = 'skip';
+      }
+    }
+    
+    const voteCounts: Record<string, string[]> = {};
+    for (const p of this.players.values()) {
+      if (p.vote && p.vote !== 'skip') {
+        if (!voteCounts[p.vote]) voteCounts[p.vote] = [];
+        voteCounts[p.vote].push(p.id);
+      }
+    }
+    
+    let maxVotes = 0;
+    let eliminatedIds: string[] = [];
+    
+    for (const [targetId, voters] of Object.entries(voteCounts)) {
+      if (voters.length > maxVotes) {
+        maxVotes = voters.length;
+        eliminatedIds = [targetId];
+      } else if (voters.length === maxVotes) {
+        eliminatedIds.push(targetId);
+      }
+    }
+    
+    // Convert voteCounts to VoteResult array
+    const votes: VoteResult[] = Object.entries(voteCounts).map(([targetId, voters]) => ({
+      playerId: targetId,
+      voterIds: voters,
+    }));
+    
+    // Add skips
+    const skippers = Array.from(this.players.values()).filter(p => p.vote === 'skip').map(p => p.id);
+    if (skippers.length > 0) {
+      votes.push({ playerId: 'skip', voterIds: skippers });
+    }
+    
+    const impostors = Array.from(this.players.values()).filter(p => p.role === 'impostor').map(p => p.id);
+    
+    let winners: RevealResult['winners'] = 'tie';
+    let gameContinues = false;
 
-		// Reset player states
-		for (const player of this.players.values()) {
-			player.clue = null;
-			player.vote = null;
-		}
-		this.clues = [];
-		this.revealResult = null;
+    if (this.settings.roundMode === 'long') {
+      for (const id of eliminatedIds) {
+        const p = this.players.get(id);
+        if (p) p.isSpectator = true;
+      }
 
-		// Pick word
-		let words: any[] = [];
-		if (this.settings.category === "All") {
-			words = Object.values(CATEGORIES).flat();
-		} else {
-			words = CATEGORIES[this.settings.category];
-		}
+      const activePlayers = Array.from(this.players.values()).filter(p => !p.isSpectator);
+      const activeImpostors = activePlayers.filter(p => p.role === 'impostor');
+      const activeCivilians = activePlayers.filter(p => p.role === 'player');
 
-		if (!words || words.length === 0) return;
-		const wordEntry = words[Math.floor(Math.random() * words.length)];
-		this.secretWord = wordEntry.word;
-		this.secretVagueHint = wordEntry.vagueHint;
+      if (activeImpostors.length === 0) {
+        winners = 'players';
+      } else if (activeImpostors.length >= activeCivilians.length) {
+        winners = 'impostors';
+      } else {
+        gameContinues = true;
+      }
+    } else {
+      if (eliminatedIds.length === 1) {
+        const eliminated = this.players.get(eliminatedIds[0]);
+        if (eliminated) {
+          if (eliminated.role === 'impostor') {
+            winners = 'players';
+          } else {
+            winners = 'impostors';
+          }
+        }
+      } else {
+        winners = 'impostors'; // Tie means impostors survive
+      }
+    }
 
-		// Assign roles
-		const playerIds = activePlayers.map((p) => p.id);
-		for (let i = playerIds.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
-		}
+    this.revealResult = {
+      eliminatedPlayerIds: eliminatedIds,
+      winners,
+      impostors: gameContinues ? [] : impostors, // hide if continues
+      word: gameContinues ? '' : this.secretWord, // hide if continues
+      category: this.settings.category,
+      votes,
+      gameContinues,
+    };
+    
+    this.setPhase('Reveal');
+  }
 
-		let impostorCount = Math.min(this.settings.impostorCount, Math.floor(playerIds.length / 2) || 1);
+  nextRound() {
+    if (this.phase !== 'Reveal') return;
 
-		for (let i = 0; i < playerIds.length; i++) {
-			const p = this.players.get(playerIds[i])!;
-			if (i < impostorCount) {
-				p.role = "impostor";
-				p.word = null;
-				if (this.settings.hintMode === "category") {
-					p.hint = `Category: ${this.settings.category}`;
-				} else if (this.settings.hintMode === "vague") {
-					p.hint = `Hint: ${this.secretVagueHint}`;
-				} else {
-					p.hint = null;
-				}
-			} else {
-				p.role = "player";
-				p.word = this.secretWord;
-				p.hint = null;
-			}
-		}
-
-		// Explicitly reset spectators roles just in case
-		for (const p of this.players.values()) {
-			if (p.isSpectator) {
-				p.role = "player";
-				p.word = null;
-				p.hint = null;
-			}
-		}
-
-		this.setPhase("RoleReveal", 8);
-	}
-
-	startCluePhase() {
-		this.touch();
-		// Build turn queue
-		const activePlayers = Array.from(this.players.values()).filter((p) => !p.isSpectator);
-		this.turnQueue = activePlayers.map((p) => p.id);
-		for (let i = this.turnQueue.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[this.turnQueue[i], this.turnQueue[j]] = [this.turnQueue[j], this.turnQueue[i]];
-		}
-
-		this.clues = [];
-		this.nextTurn(true);
-	}
-
-	nextTurn(first = false) {
-		if (!first) {
-			// Mark current player as skipped if they didn't submit
-			if (this.currentTurnPlayerId) {
-				const p = this.players.get(this.currentTurnPlayerId);
-				if (p && !p.clue) {
-					p.clue = "- Skipped -";
-					this.clues.push({ playerId: p.id, clue: p.clue });
-				}
-			}
-		}
-
-		if (this.turnQueue.length === 0) {
-			this.currentTurnPlayerId = null;
-			this.startDiscussionPhase();
-			return;
-		}
-
-		this.currentTurnPlayerId = this.turnQueue.shift()!;
-		this.setPhase("CluePhase", this.settings.clueTimeLimit);
-	}
-
-	submitClue(playerId: string, clue: string) {
-		if (this.phase !== "CluePhase" || this.currentTurnPlayerId !== playerId) return;
-		this.touch();
-
-		const p = this.players.get(playerId);
-		if (p) {
-			p.clue = clue.trim().substring(0, 30);
-			this.clues.push({ playerId: p.id, clue: p.clue });
-		}
-		this.nextTurn();
-	}
-
-	startDiscussionPhase() {
-		this.setPhase("Discussion", this.settings.discussionTimeLimit);
-	}
-
-	startVotingPhase() {
-		this.setPhase("Voting", 30); // 30 sec to vote
-	}
-
-	submitVote(playerId: string, votedForId: string | null) {
-		if (this.phase !== "Voting") return;
-		this.touch();
-
-		const p = this.players.get(playerId);
-		if (p && !p.isSpectator) {
-			p.vote = votedForId || "skip";
-		}
-
-		// Check if everyone voted
-		const activePlayers = Array.from(this.players.values()).filter((player) => !player.isSpectator);
-		if (activePlayers.every((player) => player.vote !== null)) {
-			this.tallyVotes();
-		}
-	}
-
-	tallyVotes() {
-		if (this.phase === "Reveal") return; // prevent double tally
-
-		const voteCounts: Record<string, string[]> = {};
-		for (const p of this.players.values()) {
-			if (p.vote && p.vote !== "skip") {
-				if (!voteCounts[p.vote]) voteCounts[p.vote] = [];
-				voteCounts[p.vote].push(p.id);
-			}
-		}
-
-		let maxVotes = 0;
-		let eliminatedIds: string[] = [];
-
-		for (const [targetId, voters] of Object.entries(voteCounts)) {
-			if (voters.length > maxVotes) {
-				maxVotes = voters.length;
-				eliminatedIds = [targetId];
-			} else if (voters.length === maxVotes) {
-				eliminatedIds.push(targetId);
-			}
-		}
-
-		// Convert voteCounts to VoteResult array
-		const votes: VoteResult[] = Object.entries(voteCounts).map(([targetId, voters]) => ({
-			playerId: targetId,
-			voterIds: voters,
-		}));
-
-		// Add skips
-		const skippers = Array.from(this.players.values())
-			.filter((p) => p.vote === "skip")
-			.map((p) => p.id);
-		if (skippers.length > 0) {
-			votes.push({ playerId: "skip", voterIds: skippers });
-		}
-
-		const impostors = Array.from(this.players.values())
-			.filter((p) => p.role === "impostor")
-			.map((p) => p.id);
-
-		let winners: RevealResult["winners"] = "tie";
-		if (eliminatedIds.length === 1) {
-			const eliminated = this.players.get(eliminatedIds[0]);
-			if (eliminated) {
-				if (eliminated.role === "impostor") {
-					// Check if all impostors are eliminated
-					// For simplicity, if they catch ONE impostor, players win. Or if multiple impostors, maybe need to catch all.
-					// Let's say catching ANY impostor is a win for the players for this round.
-					winners = "players";
-				} else {
-					winners = "impostors";
-				}
-			}
-		} else {
-			winners = "impostors"; // Tie means impostors survive
-		}
-
-		this.revealResult = {
-			eliminatedPlayerIds: eliminatedIds,
-			winners,
-			impostors,
-			word: this.secretWord,
-			category: this.settings.category,
-			votes,
-		};
-
-		this.setPhase("Reveal");
-	}
+    if (this.revealResult && this.revealResult.gameContinues) {
+      for (const player of this.players.values()) {
+        player.clue = null;
+        player.vote = null;
+      }
+      this.clues = [];
+      this.startCluePhase();
+    } else {
+      for (const player of this.players.values()) {
+        player.clue = null;
+        player.vote = null;
+        player.role = 'player';
+        player.word = null;
+        player.hint = null;
+        player.isSpectator = false;
+      }
+      this.clues = [];
+      this.revealResult = null;
+      this.setPhase('Lobby');
+    }
+  }
 }

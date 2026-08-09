@@ -52,7 +52,7 @@ const COLORS = [
 ];
 
 export function PlayerSetupView() {
-	const { updatePlayer, roomCode, leaveRoom, isCreator } = useGame();
+	const { updatePlayer, roomCode, leaveRoom, isCreator, roomState, sessionId } = useGame();
 	const [name, setName] = useState("");
 	const [avatar, setAvatar] = useState(AVATARS[Math.floor(Math.random() * AVATARS.length)]);
 	const [color, setColor] = useState(COLORS[Math.floor(Math.random() * COLORS.length)]);
@@ -68,6 +68,10 @@ export function PlayerSetupView() {
 
 	const visibleAvatars = showAllAvatars ? AVATARS : AVATARS.slice(0, 12);
 	const visibleColors = showAllColors ? COLORS : COLORS.slice(0, 12);
+
+	const nameExists = roomState?.players.some(
+		(p) => p.id !== sessionId && p.name && p.name.toUpperCase() === name.trim().toUpperCase(),
+	);
 
 	return (
 		<div className="flex-1 flex flex-col h-full relative overflow-y-auto">
@@ -99,8 +103,18 @@ export function PlayerSetupView() {
 							onChange={(e) => setName(e.target.value.toUpperCase())}
 							maxLength={16}
 							placeholder="Your name"
-							className="w-full bg-white border-4 border-indigo-200 text-indigo-900 placeholder:text-indigo-300 rounded-[16px] px-4 py-3 font-black text-lg focus:outline-none focus:border-yellow-400 transition-colors shadow-inner uppercase tracking-wider"
+							className={cn(
+								"w-full bg-white border-4 text-indigo-900 placeholder:text-indigo-300 rounded-[16px] px-4 py-3 font-black text-lg focus:outline-none transition-colors shadow-inner uppercase tracking-wider",
+								nameExists
+									? "border-red-400 focus:border-red-500 text-red-600"
+									: "border-indigo-200 focus:border-yellow-400",
+							)}
 						/>
+						{nameExists && (
+							<div className="text-red-400 text-xs font-bold mt-2 pl-1 uppercase tracking-widest">
+								Name already taken
+							</div>
+						)}
 					</div>
 
 					<div className="flex flex-col">
@@ -179,7 +193,7 @@ export function PlayerSetupView() {
 					<div className="mt-auto pt-6 pb-2 shrink-0">
 						<button
 							onClick={handleSubmit}
-							disabled={!name.trim()}
+							disabled={!name.trim() || nameExists}
 							className="w-full bg-pink-500 hover:bg-pink-600 text-white disabled:opacity-50 disabled:bg-indigo-800 disabled:text-indigo-400 disabled:border-transparent font-black text-lg py-4 px-6 rounded-3xl flex items-center justify-center space-x-2 transition-transform active:translate-y-1 shadow-xl border-b-4 border-pink-700 active:border-b-0 uppercase tracking-widest"
 						>
 							<span>{isCreator ? "Create Room" : "Join Room"}</span>

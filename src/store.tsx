@@ -19,6 +19,7 @@ interface GameContextType {
 	submitVote: (votedForId: string | null) => void;
 	nextRound: () => void;
 	sendChatMessage: (text: string) => void;
+	kickPlayer: (targetId: string) => void;
 	error: string | null;
 	clearError: () => void;
 }
@@ -46,7 +47,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	roomCodeRef.current = roomCode;
 
 	useEffect(() => {
-		const newSocket = io();
+		const serverUrl = import.meta.env.VITE_SERVER_URL;
+		const newSocket = serverUrl ? io(serverUrl) : io();
 		setSocket(newSocket);
 
 		newSocket.on("connect", () => {
@@ -76,6 +78,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 		newSocket.on("chat_message", (msg: ChatMessage) => {
 			setChatMessages((prev) => [...prev, msg]);
+		});
+
+		newSocket.on("kicked", () => {
+			setError("You have been kicked by the host.");
+			setRoomCode(null);
+			setRoomState(null);
+			setIsCreator(false);
+			localStorage.removeItem("impostor_roomCode");
+			localStorage.removeItem("impostor_sessionId");
+			localStorage.removeItem("impostor_isCreator");
 		});
 
 		return () => {
@@ -166,6 +178,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		socket.emit("chat_message", { roomCode, text });
 	};
 
+	const kickPlayer = (targetId: string) => {
+		if (!socket || !roomCode) return;
+		socket.emit("kick_player", { roomCode, targetId });
+	};
+
 	return (
 		<GameContext.Provider
 			value={{
@@ -185,6 +202,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 				submitVote,
 				nextRound,
 				sendChatMessage,
+				kickPlayer,
 				error,
 				clearError: () => setError(null),
 			}}

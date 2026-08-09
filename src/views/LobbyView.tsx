@@ -64,7 +64,7 @@ export function LobbyView() {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-4 gap-x-3 gap-y-6 mb-8">
+			<div className="grid grid-cols-4 gap-x-3 gap-y-10 mb-8">
 				{roomState.players.map((p) => (
 					<motion.div
 						initial={{ scale: 0.8, opacity: 0 }}
@@ -207,6 +207,87 @@ export function LobbyView() {
 						) : (
 							<div className="w-full bg-indigo-50 border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-indigo-900 shadow-inner">
 								{roomState.settings.category}
+							</div>
+						)}
+					</div>
+
+					<div className="space-y-3">
+						<label className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center">
+							<span>Round Mode</span>
+						</label>
+						{isHost ? (
+							<div className="grid grid-cols-2 gap-3">
+								<button
+									onClick={() => updateSettings({ roundMode: "short" })}
+									className={cn(
+										"p-3 rounded-xl border-2 text-left transition-all",
+										roomState.settings.roundMode === "short"
+											? "bg-yellow-400 border-yellow-500 shadow-inner"
+											: "bg-indigo-50 border-indigo-100 hover:bg-indigo-100",
+									)}
+								>
+									<div
+										className={cn(
+											"text-sm font-black uppercase tracking-widest mb-1",
+											roomState.settings.roundMode === "short"
+												? "text-indigo-900"
+												: "text-indigo-900",
+										)}
+									>
+										Short
+									</div>
+									<div
+										className={cn(
+											"text-xs font-bold leading-tight",
+											roomState.settings.roundMode === "short"
+												? "text-indigo-800"
+												: "text-indigo-400",
+										)}
+									>
+										One vote only.
+									</div>
+								</button>
+								<button
+									onClick={() => updateSettings({ roundMode: "long" })}
+									className={cn(
+										"p-3 rounded-xl border-2 text-left transition-all",
+										roomState.settings.roundMode === "long"
+											? "bg-yellow-400 border-yellow-500 shadow-inner"
+											: "bg-indigo-50 border-indigo-100 hover:bg-indigo-100",
+									)}
+								>
+									<div
+										className={cn(
+											"text-sm font-black uppercase tracking-widest mb-1",
+											roomState.settings.roundMode === "long"
+												? "text-indigo-900"
+												: "text-indigo-900",
+										)}
+									>
+										Long
+									</div>
+									<div
+										className={cn(
+											"text-xs font-bold leading-tight",
+											roomState.settings.roundMode === "long"
+												? "text-indigo-800"
+												: "text-indigo-400",
+										)}
+									>
+										Play until Impostors lose.
+									</div>
+								</button>
+							</div>
+						) : (
+							<div className="w-full bg-indigo-50 border-2 border-indigo-100 rounded-xl px-4 py-3 shadow-inner flex flex-col">
+								<span className="font-bold text-indigo-900 uppercase tracking-widest text-sm">
+									{roomState.settings.roundMode === "short" ? "Short" : "Long"}
+								</span>
+								<span className="text-xs text-indigo-400 font-bold">
+									{roomState.settings.roundMode === "short"
+										? "One vote only."
+										: "Play until Impostors lose."}
+								</span>
 							</div>
 						)}
 					</div>

@@ -15,10 +15,23 @@ export function RevealView() {
 	const didPlayersWin = result.winners === "players";
 	const didTie = result.winners === "tie";
 
-	const title = didTie ? "It's a Tie!" : didPlayersWin ? "Players Win!" : "Impostors Win!";
+	const isContinues = result.gameContinues;
+	const title = isContinues
+		? "Voting Results"
+		: didTie
+			? "It's a Tie!"
+			: didPlayersWin
+				? "Players Win!"
+				: "Impostors Win!";
 
-	const bgColor = didTie ? "bg-yellow-400" : didPlayersWin ? "bg-indigo-500" : "bg-pink-500";
-	const textColor = didTie ? "text-indigo-900" : "text-white";
+	const bgColor = isContinues
+		? "bg-indigo-600"
+		: didTie
+			? "bg-yellow-400"
+			: didPlayersWin
+				? "bg-indigo-500"
+				: "bg-pink-500";
+	const textColor = didTie && !isContinues ? "text-indigo-900" : "text-white";
 
 	return (
 		<div className="flex-1 flex flex-col h-full overflow-y-auto">
@@ -36,51 +49,62 @@ export function RevealView() {
 					<h1 className={cn("text-5xl font-black mb-2 uppercase italic tracking-tighter", textColor)}>
 						{title}
 					</h1>
-					<p
-						className={cn(
-							"text-lg font-bold uppercase tracking-wider",
-							didTie ? "text-indigo-800" : "text-white/80",
-						)}
-					>
-						The word was <strong className={cn("font-black", textColor)}>"{result.word}"</strong>
-					</p>
+					{!isContinues && (
+						<p
+							className={cn(
+								"text-lg font-bold uppercase tracking-wider",
+								didTie ? "text-indigo-800" : "text-white/80",
+							)}
+						>
+							The word was <strong className={cn("font-black", textColor)}>"{result.word}"</strong>
+						</p>
+					)}
+					{isContinues && (
+						<p className="text-lg font-bold uppercase tracking-wider text-white/80">
+							The game continues...
+						</p>
+					)}
 				</motion.div>
 			</div>
 
 			<div className="p-6 space-y-8 flex-1">
 				{/* Impostor Reveal */}
-				<div className="space-y-4">
-					<h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest text-center">
-						{result.impostors.length > 1 ? "The Impostors were" : "The Impostor was"}
-					</h3>
-					<div className="flex flex-wrap justify-center gap-3">
-						{result.impostors.map((impId) => {
-							const p = roomState.players.find((p) => p.id === impId);
-							if (!p) return null;
-							const eliminated = result.eliminatedPlayerIds.includes(impId);
-							return (
-								<div
-									key={impId}
-									className={cn(
-										"bg-white rounded-[20px] p-4 flex flex-col items-center space-y-2 border-4 shadow-sm",
-										eliminated ? "border-pink-500" : "border-indigo-100",
-									)}
-								>
-									<div className="text-4xl">{p.avatar}</div>
-									<div className="font-black text-indigo-900 uppercase tracking-wider">{p.name}</div>
-									{eliminated && (
-										<div className="text-xs font-black text-pink-500 uppercase tracking-widest">
-											Eliminated
+				{!isContinues && (
+					<div className="space-y-4">
+						<h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest text-center">
+							{result.impostors.length > 1 ? "The Impostors were" : "The Impostor was"}
+						</h3>
+						<div className="flex flex-wrap justify-center gap-3">
+							{result.impostors.map((impId) => {
+								const p = roomState.players.find((p) => p.id === impId);
+								if (!p) return null;
+								const eliminated = result.eliminatedPlayerIds.includes(impId);
+								return (
+									<div
+										key={impId}
+										className={cn(
+											"bg-white rounded-[20px] p-4 flex flex-col items-center space-y-2 border-4 shadow-sm",
+											eliminated ? "border-pink-500" : "border-indigo-100",
+										)}
+									>
+										<div className="text-4xl">{p.avatar}</div>
+										<div className="font-black text-indigo-900 uppercase tracking-wider">
+											{p.name}
 										</div>
-									)}
-								</div>
-							);
-						})}
+										{eliminated && (
+											<div className="text-xs font-black text-pink-500 uppercase tracking-widest">
+												Eliminated
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</div>
 					</div>
-				</div>
+				)}
 
 				{/* Vote Results */}
-				<div className="space-y-4 pt-6 border-t-4 border-indigo-500/20">
+				<div className={cn("space-y-4", !isContinues && "pt-6 border-t-4 border-indigo-500/20")}>
 					<h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest mb-4">
 						Voting Results
 					</h3>

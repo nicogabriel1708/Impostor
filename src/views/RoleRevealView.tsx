@@ -5,11 +5,12 @@ import { Timer } from "../components/Timer";
 import { useGame } from "../store";
 
 export function RoleRevealView() {
-	const { roomState } = useGame();
+	const { roomState, sessionId } = useGame();
 	const [revealed, setRevealed] = useState(false);
 
 	if (!roomState) return null;
 
+	const me = roomState.players.find((p) => p.id === sessionId);
 	const isImpostor = roomState.myRole === "impostor";
 
 	return (

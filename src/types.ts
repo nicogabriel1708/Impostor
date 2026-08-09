@@ -1,6 +1,7 @@
 export type GamePhase = "Lobby" | "RoleReveal" | "CluePhase" | "Discussion" | "Voting" | "Reveal";
 
 export type HintMode = "none" | "category" | "vague";
+export type RoundMode = "short" | "long";
 
 export interface GameSettings {
 	impostorCount: number;
@@ -8,6 +9,7 @@ export interface GameSettings {
 	clueTimeLimit: number; // in seconds
 	discussionTimeLimit: number; // in seconds
 	hintMode: HintMode;
+	roundMode: RoundMode;
 }
 
 export interface Player {
@@ -17,6 +19,7 @@ export interface Player {
 	color: string;
 	isHost: boolean;
 	connected: boolean;
+	isSpectator?: boolean;
 }
 
 export interface GamePlayer extends Player {
@@ -44,6 +47,7 @@ export interface RevealResult {
 	word: string;
 	category: string;
 	votes: VoteResult[];
+	gameContinues?: boolean;
 }
 
 export interface ChatMessage {

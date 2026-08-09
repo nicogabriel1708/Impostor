@@ -6,9 +6,9 @@ import { useGame } from "../store";
 export function VotingView() {
 	const { roomState, sessionId, submitVote } = useGame();
 
-	const me = roomState.players.find((p) => p.id === sessionId);
-
 	if (!roomState) return null;
+
+	const me = roomState.players.find((p) => p.id === sessionId);
 
 	const hasVoted = roomState.hasVoted;
 	const isSpectator = me?.isSpectator;

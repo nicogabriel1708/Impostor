@@ -72,7 +72,11 @@ export function CluePhaseView() {
 									<div
 										className={cn(
 											"text-xl font-black break-words",
-											c.playerId === sessionId ? "text-white" : "text-indigo-900",
+											c.clue === "- Skipped -"
+												? "text-red-500"
+												: c.playerId === sessionId
+													? "text-white"
+													: "text-indigo-900",
 										)}
 									>
 										{c.clue}

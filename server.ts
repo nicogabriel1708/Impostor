@@ -190,7 +190,7 @@ async function startServer() {
 			const sessionId = socket.data.sessionId;
 			const player = room.players.get(sessionId);
 			if (player && player.isHost && room.phase === "Reveal") {
-				room.setPhase("Lobby");
+				room.nextRound();
 				broadcastRoomState(room);
 			}
 		});
@@ -243,6 +243,31 @@ async function startServer() {
 						);
 					}
 					broadcastRoomState(room);
+				}
+			}
+		});
+
+		socket.on("kick_player", ({ roomCode, targetId }) => {
+			const sessionId = socket.data.sessionId;
+			if (!sessionId || !roomCode) return;
+
+			const room = rooms.get(roomCode.toUpperCase());
+			if (!room) return;
+
+			const me = room.players.get(sessionId);
+			if (!me || !me.isHost) return;
+
+			if (room.players.has(targetId)) {
+				room.removePlayer(targetId);
+				broadcastRoomState(room);
+				io.to(targetId).emit("kicked");
+				// also force them to leave room channel
+				const targetSockets = io.sockets.adapter.rooms.get(targetId);
+				if (targetSockets) {
+					for (const sockId of targetSockets) {
+						const s = io.sockets.sockets.get(sockId);
+						if (s) s.leave(room.code);
+					}
 				}
 			}
 		});

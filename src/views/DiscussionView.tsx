@@ -14,10 +14,10 @@ export function DiscussionView() {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [chatMessages]);
 
+	if (!roomState) return null;
+
 	const me = roomState.players.find((p) => p.id === sessionId);
 	const isSpectator = me?.isSpectator;
-
-	if (!roomState) return null;
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
