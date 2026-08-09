@@ -76,6 +76,7 @@ export class Room {
 				color: p.color,
 				isHost: p.isHost,
 				connected: p.connected,
+				isSpectator: p.isSpectator,
 			})),
 			myRole: player?.role,
 			myWord: player?.word,
@@ -95,6 +96,13 @@ export class Room {
 
 	setPhase(phase: GamePhase, durationSec?: number) {
 		this.phase = phase;
+
+		if (phase === "Lobby") {
+			for (const p of this.players.values()) {
+				if (p.connected) p.isSpectator = false;
+			}
+		}
+
 		if (this.timerTimeout) clearTimeout(this.timerTimeout);
 
 		if (durationSec) {
@@ -128,6 +136,7 @@ export class Room {
 			color,
 			isHost,
 			connected: true,
+			isSpectator: this.phase !== "Lobby",
 			role: "player",
 			word: null,
 			hint: null,
@@ -166,7 +175,8 @@ export class Room {
 	}
 
 	startGame() {
-		if (this.players.size < 1) return;
+		const activePlayers = Array.from(this.players.values()).filter((p) => !p.isSpectator);
+		if (activePlayers.length < 3) return;
 		this.touch();
 
 		// Reset player states
@@ -191,7 +201,7 @@ export class Room {
 		this.secretVagueHint = wordEntry.vagueHint;
 
 		// Assign roles
-		const playerIds = Array.from(this.players.keys());
+		const playerIds = activePlayers.map((p) => p.id);
 		for (let i = playerIds.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
@@ -218,13 +228,23 @@ export class Room {
 			}
 		}
 
+		// Explicitly reset spectators roles just in case
+		for (const p of this.players.values()) {
+			if (p.isSpectator) {
+				p.role = "player";
+				p.word = null;
+				p.hint = null;
+			}
+		}
+
 		this.setPhase("RoleReveal", 8);
 	}
 
 	startCluePhase() {
 		this.touch();
 		// Build turn queue
-		this.turnQueue = Array.from(this.players.keys());
+		const activePlayers = Array.from(this.players.values()).filter((p) => !p.isSpectator);
+		this.turnQueue = activePlayers.map((p) => p.id);
 		for (let i = this.turnQueue.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[this.turnQueue[i], this.turnQueue[j]] = [this.turnQueue[j], this.turnQueue[i]];
@@ -281,12 +301,13 @@ export class Room {
 		this.touch();
 
 		const p = this.players.get(playerId);
-		if (p) {
+		if (p && !p.isSpectator) {
 			p.vote = votedForId || "skip";
 		}
 
 		// Check if everyone voted
-		if (Array.from(this.players.values()).every((player) => player.vote !== null)) {
+		const activePlayers = Array.from(this.players.values()).filter((player) => !player.isSpectator);
+		if (activePlayers.every((player) => player.vote !== null)) {
 			this.tallyVotes();
 		}
 	}
