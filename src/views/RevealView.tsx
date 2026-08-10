@@ -1,4 +1,4 @@
-import { ArrowRight, Ghost, Users } from "lucide-react";
+import { ArrowRight, Fish, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { Timer } from "../components/Timer";
 import { cn } from "../lib/utils";
@@ -49,7 +49,7 @@ export function RevealView() {
 					{didPlayersWin ? (
 						<Users className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
 					) : (
-						<Ghost className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
+						<Fish className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
 					)}
 					<h1 className={cn("text-5xl font-black mb-2 uppercase italic tracking-tighter", textColor)}>
 						{title}

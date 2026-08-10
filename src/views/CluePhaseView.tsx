@@ -18,13 +18,13 @@ export function CluePhaseView() {
 
 	const inputRef = React.useRef<HTMLInputElement>(null);
 
-	React.useEffect(() => {
+	React.React.useEffect(() => {
 		if (isMyTurn) {
 			setTimeout(() => inputRef.current?.focus(), 100);
 		}
 	}, [isMyTurn]);
 
-	useEffect(() => {
+	React.useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			// Ignore if pressing modifier keys or if already focused on an input
 			if (e.ctrlKey || e.metaKey || e.altKey) return;
