@@ -55,6 +55,7 @@ async function startServer() {
 
 			const room = new Room(code, io);
 			rooms.set(code, room);
+			room.onStateChange = () => broadcastRoomState(room);
 
 			const sessionId = Math.random().toString(36).substring(2, 15);
 			socket.data.sessionId = sessionId;
@@ -175,6 +176,14 @@ async function startServer() {
 			}
 		});
 
+		socket.on("toggle_skip_discussion", ({ roomCode }) => {
+			const room = rooms.get(roomCode.toUpperCase());
+			if (room) {
+				const sessionId = socket.data.sessionId;
+				room.toggleSkipDiscussion(sessionId);
+				broadcastRoomState(room);
+			}
+		});
 		socket.on("submit_vote", ({ roomCode, votedForId }) => {
 			const room = rooms.get(roomCode.toUpperCase());
 			if (room) {

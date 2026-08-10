@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, MessageSquare, Send } from "lucide-react";
+import { ChevronDown, ChevronUp, FastForward, MessageSquare, Send } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
 import { Timer } from "../components/Timer";
@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 import { useGame } from "../store";
 
 export function DiscussionView() {
-	const { roomState, sessionId, chatMessages, sendChatMessage } = useGame();
+	const { roomState, sessionId, chatMessages, sendChatMessage, toggleSkipDiscussion } = useGame();
 	const [chatInput, setChatInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -18,6 +18,22 @@ export function DiscussionView() {
 
 	const me = roomState.players.find((p) => p.id === sessionId);
 	const isSpectator = me?.isSpectator;
+
+	const inputRef = React.useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Ignore if pressing modifier keys or if already focused on an input
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+
+			// If it's a character key, focus the input
+			if (e.key.length === 1 && inputRef.current) {
+				inputRef.current.focus();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, []);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -35,6 +51,23 @@ export function DiscussionView() {
 						<MessageSquare className="w-6 h-6" />
 						<h2 className="text-sm font-black tracking-widest uppercase">Discussion</h2>
 					</div>
+
+					<button
+						onClick={() => toggleSkipDiscussion()}
+						className={cn(
+							"px-4 py-2 rounded-2xl flex items-center space-x-2 text-xs font-black uppercase tracking-widest transition-colors border-2",
+							me?.wantsToSkipDiscussion
+								? "bg-yellow-400 border-yellow-500 text-indigo-900"
+								: "bg-indigo-800 border-indigo-500 text-indigo-200 hover:bg-indigo-700",
+						)}
+					>
+						<span>Skip</span>
+						<div className="bg-black/20 px-2 py-0.5 rounded-full">
+							{roomState.players.filter((p) => p.wantsToSkipDiscussion).length}/
+							{roomState.players.filter((p) => !p.isSpectator).length}
+						</div>
+						<FastForward className="w-4 h-4" />
+					</button>
 					<Timer endsAt={roomState.timerEndsAt} />
 				</div>
 
@@ -59,6 +92,7 @@ export function DiscussionView() {
 					{chatMessages.map((msg) => {
 						const p = roomState.players.find((player) => player.id === msg.playerId);
 						const isMe = msg.playerId === sessionId;
+						const textColorClass = p?.color ? p.color.replace("bg-", "text-") : "text-indigo-400";
 						return (
 							<motion.div
 								key={msg.id}
@@ -70,7 +104,12 @@ export function DiscussionView() {
 								)}
 							>
 								{!isMe && (
-									<div className="w-10 h-10 rounded-full bg-indigo-100/50 border-2 border-white flex items-center justify-center text-lg shrink-0 shadow-inner">
+									<div
+										className={cn(
+											"w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-lg shrink-0 shadow-inner",
+											p?.color,
+										)}
+									>
 										{p?.avatar}
 									</div>
 								)}
@@ -83,7 +122,12 @@ export function DiscussionView() {
 									)}
 								>
 									{!isMe && (
-										<div className="text-[10px] font-black text-indigo-400 mb-0.5 uppercase tracking-wider">
+										<div
+											className={cn(
+												"text-[10px] font-black mb-0.5 uppercase tracking-wider",
+												textColorClass,
+											)}
+										>
 											{p?.name}
 										</div>
 									)}
@@ -106,6 +150,7 @@ export function DiscussionView() {
 				) : (
 					<form onSubmit={handleSubmit} className="flex space-x-2">
 						<input
+							ref={inputRef}
 							type="text"
 							value={chatInput}
 							onChange={(e) => setChatInput(e.target.value)}

@@ -77,7 +77,7 @@ export function RoleRevealView() {
 									{roomState.myHint && (
 										<div className="bg-pink-900/40 border-4 border-pink-400/50 rounded-[20px] p-4 w-full shadow-inner">
 											<p className="text-xs font-black text-pink-200 uppercase tracking-widest mb-1">
-												Intel
+												{roomState.secretCategory || roomState.settings.category}
 											</p>
 											<p className="text-2xl font-black text-white">{roomState.myHint}</p>
 										</div>

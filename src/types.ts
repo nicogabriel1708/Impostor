@@ -43,6 +43,7 @@ export interface VoteResult {
 
 export interface RevealResult {
 	eliminatedPlayerIds: string[];
+	eliminatedRoles?: Record<string, string>;
 	winners: "impostors" | "players" | "tie"; // tie means no one eliminated or draw
 	impostors: string[]; // player IDs
 	word: string;

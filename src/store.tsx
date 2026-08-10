@@ -19,6 +19,7 @@ interface GameContextType {
 	submitVote: (votedForId: string | null) => void;
 	nextRound: () => void;
 	sendChatMessage: (text: string) => void;
+	toggleSkipDiscussion: () => void;
 	kickPlayer: (targetId: string) => void;
 	error: string | null;
 	clearError: () => void;

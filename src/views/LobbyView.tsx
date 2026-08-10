@@ -41,16 +41,13 @@ export function LobbyView() {
 					<span className="text-4xl font-mono font-black tracking-[0.2em] text-yellow-400 ml-[0.2em]">
 						{roomState.code}
 					</span>
-					{copied ? (
-						<Check className="w-6 h-6 text-green-400 transition-colors" />
-					) : (
-						<Copy className="w-6 h-6 text-indigo-400 group-hover:text-yellow-400 transition-colors" />
-					)}
-					{copied && (
-						<span className="absolute -top-8 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
-							Copied!
-						</span>
-					)}
+					<div className="w-6 h-6 flex items-center justify-center shrink-0">
+						{copied ? (
+							<Check className="w-6 h-6 text-green-400 transition-colors" />
+						) : (
+							<Copy className="w-6 h-6 text-indigo-400 group-hover:text-yellow-400 transition-colors" />
+						)}
+					</div>
 				</button>
 			</div>
 
@@ -176,7 +173,7 @@ export function LobbyView() {
 
 					<div>
 						<label className="text-xs font-black text-indigo-400 uppercase tracking-widest flex justify-between mb-3">
-							<span>Vote Time</span>
+							<span>Discussion Time</span>
 							<span className="text-indigo-900">{roomState.settings.discussionTimeLimit}s</span>
 						</label>
 						{isHost ? (
@@ -209,7 +206,7 @@ export function LobbyView() {
 								onChange={(e) => updateSettings({ category: e.target.value })}
 								className="w-full bg-indigo-50 border-2 border-indigo-200 rounded-xl px-4 py-3 font-bold text-indigo-900 appearance-none shadow-sm focus:outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/20"
 							>
-								<option value="All">All</option>
+								<option value="Random">Random</option>
 								{Object.keys(CATEGORIES).map((cat) => (
 									<option key={cat} value={cat}>
 										{cat}
@@ -367,7 +364,12 @@ export function LobbyView() {
 							exit={{ scale: 0.9, opacity: 0, y: 20 }}
 							className="bg-white rounded-[30px] p-6 shadow-2xl z-10 w-full max-w-sm border-4 border-indigo-100 flex flex-col items-center"
 						>
-							<div className="w-20 h-20 text-4xl rounded-[24px] bg-indigo-100 flex items-center justify-center mb-4 shadow-inner">
+							<div
+								className={cn(
+									"w-20 h-20 text-4xl rounded-[24px] flex items-center justify-center mb-4 shadow-inner text-white border-4 border-white/20",
+									roomState.players.find((p) => p.id === menuPlayerId)?.color,
+								)}
+							>
 								{roomState.players.find((p) => p.id === menuPlayerId)?.avatar}
 							</div>
 							<h3 className="text-xl font-black text-indigo-900 uppercase tracking-wider mb-6 text-center">

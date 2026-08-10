@@ -31,23 +31,23 @@ const AVATARS = [
 ];
 
 const COLORS = [
+	"bg-rose-600",
 	"bg-red-500",
 	"bg-orange-500",
+	"bg-amber-600",
 	"bg-yellow-400",
 	"bg-lime-400",
 	"bg-green-700",
+	"bg-teal-500",
 	"bg-cyan-500",
 	"bg-sky-400",
 	"bg-blue-700",
-	"bg-pink-400",
-	"bg-rose-600",
-	"bg-fuchsia-400",
+	"bg-indigo-500",
 	"bg-purple-700",
-	"bg-amber-600",
+	"bg-fuchsia-400",
+	"bg-pink-400",
 	"bg-amber-900",
-	"bg-gray-300",
 	"bg-gray-600",
-	"bg-white",
 	"bg-black",
 ];
 

@@ -16,6 +16,29 @@ export function CluePhaseView() {
 	const currentTurnPlayer = roomState.players.find((p) => p.id === roomState.currentTurnPlayerId);
 	const me = roomState.players.find((p) => p.id === sessionId);
 
+	const inputRef = React.useRef<HTMLInputElement>(null);
+
+	React.useEffect(() => {
+		if (isMyTurn) {
+			setTimeout(() => inputRef.current?.focus(), 100);
+		}
+	}, [isMyTurn]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Ignore if pressing modifier keys or if already focused on an input
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+
+			// If it's a character key, focus the input
+			if (e.key.length === 1 && inputRef.current) {
+				inputRef.current.focus();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, []);
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (clueInput.trim() && isMyTurn) {
@@ -66,7 +89,12 @@ export function CluePhaseView() {
 											: "bg-white border-indigo-100 text-indigo-900",
 									)}
 								>
-									<div className="w-12 h-12 rounded-[16px] bg-indigo-100/50 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+									<div
+										className={cn(
+											"w-12 h-12 rounded-[16px] flex items-center justify-center text-2xl shrink-0 shadow-inner border-2 border-white/20",
+											p?.color,
+										)}
+									>
 										{p?.avatar}
 									</div>
 									<div className="flex-1 min-w-0">
@@ -102,7 +130,12 @@ export function CluePhaseView() {
 						animate={{ opacity: 1, scale: 1 }}
 						className="p-4 rounded-[30px] border-4 border-dashed border-indigo-400 bg-indigo-500/20 flex flex-col items-center justify-center space-y-2 py-8"
 					>
-						<div className="w-16 h-16 rounded-[20px] bg-indigo-400/50 text-3xl flex items-center justify-center animate-bounce shadow-inner border-2 border-indigo-300">
+						<div
+							className={cn(
+								"w-16 h-16 rounded-[20px] text-3xl flex items-center justify-center animate-bounce shadow-inner border-2 border-white/20",
+								currentTurnPlayer.color,
+							)}
+						>
 							{currentTurnPlayer.avatar}
 						</div>
 						<div className="text-sm font-black text-indigo-200 uppercase tracking-widest">
@@ -122,6 +155,7 @@ export function CluePhaseView() {
 							</label>
 							<div className="flex space-x-2">
 								<input
+									ref={inputRef}
 									type="text"
 									value={clueInput}
 									onChange={(e) => setClueInput(e.target.value)}

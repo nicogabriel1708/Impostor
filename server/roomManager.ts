@@ -20,7 +20,7 @@ export class Room {
 	players: Map<string, GamePlayer> = new Map();
 	settings: GameSettings = {
 		impostorCount: 1,
-		category: "All",
+		category: "Random",
 		clueTimeLimit: 30,
 		discussionTimeLimit: 60,
 		hintMode: "none",
@@ -34,6 +34,7 @@ export class Room {
 	secretWord: string = "";
 	secretVagueHint: string = "";
 	secretCategory: string = "";
+	onStateChange: () => void = () => {};
 
 	revealResult: RevealResult | null = null;
 
@@ -80,6 +81,7 @@ export class Room {
 				isHost: p.isHost,
 				connected: p.connected,
 				isSpectator: p.isSpectator,
+				wantsToSkipDiscussion: p.wantsToSkipDiscussion,
 			})),
 			myRole: player?.role,
 			myWord: player?.word,
@@ -119,6 +121,7 @@ export class Room {
 	}
 
 	handleTimerExpiry() {
+		const oldPhase = this.phase;
 		if (this.phase === "RoleReveal") {
 			this.startCluePhase();
 		} else if (this.phase === "CluePhase") {
@@ -132,6 +135,7 @@ export class Room {
 		} else if (this.phase === "Voting") {
 			this.tallyVotes();
 		}
+		if (this.phase !== oldPhase) this.onStateChange();
 	}
 
 	addPlayer(id: string, name: string, avatar: string, color: string) {
@@ -145,6 +149,7 @@ export class Room {
 			isHost,
 			connected: true,
 			isSpectator: this.phase !== "Lobby",
+			wantsToSkipDiscussion: false,
 			role: "player",
 			word: null,
 			hint: null,
@@ -207,7 +212,7 @@ export class Room {
 		// Pick word
 		let words: any[] = [];
 		let pickedCategory = this.settings.category;
-		if (this.settings.category === "All") {
+		if (this.settings.category === "Random") {
 			const cats = Object.keys(CATEGORIES);
 			pickedCategory = cats[Math.floor(Math.random() * cats.length)];
 			words = CATEGORIES[pickedCategory];
@@ -317,9 +322,24 @@ export class Room {
 	}
 
 	startDiscussionPhase() {
+		for (const p of this.players.values()) {
+			p.wantsToSkipDiscussion = false;
+		}
 		this.setPhase("Discussion", this.settings.discussionTimeLimit);
 	}
 
+	toggleSkipDiscussion(playerId: string) {
+		if (this.phase !== "Discussion") return;
+		const p = this.players.get(playerId);
+		if (!p || p.isSpectator) return;
+		p.wantsToSkipDiscussion = !p.wantsToSkipDiscussion;
+
+		const activePlayers = Array.from(this.players.values()).filter((x) => !x.isSpectator);
+		const allSkip = activePlayers.every((x) => x.wantsToSkipDiscussion);
+		if (allSkip) {
+			this.startVotingPhase();
+		}
+	}
 	startVotingPhase() {
 		this.setPhase("Voting", 30); // 30 sec to vote
 	}
@@ -338,6 +358,7 @@ export class Room {
 		if (activePlayers.every((player) => player.vote !== null)) {
 			this.tallyVotes();
 		}
+		if (this.phase !== oldPhase) this.onStateChange();
 	}
 
 	tallyVotes() {
@@ -361,6 +382,7 @@ export class Room {
 
 		let maxVotes = 0;
 		let eliminatedIds: string[] = [];
+		let eliminatedRoles: Record<string, string> = {};
 
 		for (const [targetId, voters] of Object.entries(voteCounts)) {
 			if (voters.length > maxVotes) {
@@ -428,8 +450,14 @@ export class Room {
 			}
 		}
 
+		for (const id of eliminatedIds) {
+			const p = this.players.get(id);
+			if (p) eliminatedRoles[id] = p.role;
+		}
+
 		this.revealResult = {
 			eliminatedPlayerIds: eliminatedIds,
+			eliminatedRoles,
 			winners,
 			impostors: gameContinues ? [] : impostors, // hide if continues
 			word: gameContinues ? "" : this.secretWord, // hide if continues
