@@ -1,6 +1,6 @@
 import { CheckCircle2, Send } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Timer } from "../components/Timer";
 import { cn } from "../lib/utils";
 import { useGame } from "../store";
@@ -16,15 +16,15 @@ export function CluePhaseView() {
 	const currentTurnPlayer = roomState.players.find((p) => p.id === roomState.currentTurnPlayerId);
 	const me = roomState.players.find((p) => p.id === sessionId);
 
-	const inputRef = React.useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
 
-	React.React.useEffect(() => {
+	useEffect(() => {
 		if (isMyTurn) {
 			setTimeout(() => inputRef.current?.focus(), 100);
 		}
 	}, [isMyTurn]);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			// Ignore if pressing modifier keys or if already focused on an input
 			if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -167,7 +167,7 @@ export function CluePhaseView() {
 								<button
 									type="submit"
 									disabled={!clueInput.trim()}
-									className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:bg-indigo-100 text-indigo-900 p-4 rounded-[20px] flex items-center justify-center transition-transform active:translate-y-1 shadow-lg border-b-4 border-yellow-600 active:border-b-0 disabled:border-transparent"
+									className="cursor-pointer bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:bg-indigo-100 text-indigo-900 p-4 rounded-[20px] flex items-center justify-center transition-transform active:translate-y-1 shadow-lg border-b-4 border-yellow-600 active:border-b-0 disabled:border-transparent"
 								>
 									<Send className="w-6 h-6" strokeWidth={3} />
 								</button>

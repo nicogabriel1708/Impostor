@@ -19,7 +19,7 @@ export function DiscussionView() {
 	const me = roomState.players.find((p) => p.id === sessionId);
 	const isSpectator = me?.isSpectator;
 
-	const inputRef = React.useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			// Ignore if pressing modifier keys or if already focused on an input
@@ -155,13 +155,14 @@ export function DiscussionView() {
 							value={chatInput}
 							onChange={(e) => setChatInput(e.target.value)}
 							maxLength={100}
+							autoFocus
 							placeholder="Say something..."
 							className="flex-1 bg-white border-4 border-indigo-200 text-indigo-900 placeholder:text-indigo-300 rounded-full px-5 py-3 font-bold text-sm focus:outline-none focus:border-yellow-400 shadow-inner"
 						/>
 						<button
 							type="submit"
 							disabled={!chatInput.trim()}
-							className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:bg-indigo-800 disabled:border-transparent text-white w-14 h-14 rounded-full flex items-center justify-center shrink-0 transition-transform active:translate-y-1 shadow-lg border-b-4 border-pink-700 active:border-b-0"
+							className="cursor-pointer bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:bg-indigo-800 disabled:border-transparent text-white w-14 h-14 rounded-full flex items-center justify-center shrink-0 transition-transform active:translate-y-1 shadow-lg border-b-4 border-pink-700 active:border-b-0"
 						>
 							<Send className="w-5 h-5 -ml-0.5" strokeWidth={3} />
 						</button>

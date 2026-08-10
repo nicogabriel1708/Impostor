@@ -234,7 +234,7 @@ export function RevealView() {
 				) : isHost ? (
 					<button
 						onClick={nextRound}
-						className="w-full bg-pink-500 hover:bg-pink-600 text-white font-black text-xl py-5 px-6 rounded-3xl flex items-center justify-center space-x-2 transition-transform active:translate-y-1 shadow-xl border-b-4 border-pink-700 active:border-b-0 uppercase tracking-widest"
+						className="cursor-pointer w-full bg-pink-500 hover:bg-pink-600 text-white font-black text-xl py-5 px-6 rounded-3xl flex items-center justify-center space-x-2 transition-transform active:translate-y-1 shadow-xl border-b-4 border-pink-700 active:border-b-0 uppercase tracking-widest"
 					>
 						<span>Back to Lobby</span>
 						<ArrowRight className="w-6 h-6" strokeWidth={3} />

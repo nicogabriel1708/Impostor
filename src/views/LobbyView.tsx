@@ -27,7 +27,7 @@ export function LobbyView() {
 		<div className="flex-1 flex flex-col p-6 overflow-y-auto relative">
 			<button
 				onClick={leaveRoom}
-				className="absolute top-6 left-6 p-3 bg-indigo-800 text-indigo-200 hover:bg-indigo-700 hover:text-white rounded-[16px] transition-all shadow-lg border-b-4 border-indigo-900 active:border-b-0 active:translate-y-1 z-10"
+				className="cursor-pointer absolute top-6 left-6 p-3 bg-indigo-800 text-indigo-200 hover:bg-indigo-700 hover:text-white rounded-[16px] transition-all shadow-lg border-b-4 border-indigo-900 active:border-b-0 active:translate-y-1 z-10"
 			>
 				<ArrowLeft className="w-5 h-5" strokeWidth={3} />
 			</button>
@@ -36,7 +36,7 @@ export function LobbyView() {
 				<h2 className="text-xs font-bold tracking-widest text-indigo-200 uppercase mb-2">Room Code</h2>
 				<button
 					onClick={handleCopy}
-					className="flex items-center space-x-4 bg-indigo-900/40 hover:bg-indigo-800/60 transition-colors px-6 py-3 rounded-2xl border border-white/10 shadow-inner group active:scale-95 relative"
+					className="cursor-pointer flex items-center space-x-4 bg-indigo-900/40 hover:bg-indigo-800/60 transition-colors px-6 py-3 rounded-2xl border border-white/10 shadow-inner group active:scale-95 relative"
 				>
 					<span className="text-4xl font-mono font-black tracking-[0.2em] text-yellow-400 ml-[0.2em]">
 						{roomState.code}
@@ -129,7 +129,7 @@ export function LobbyView() {
 										onClick={() => updateSettings({ impostorCount: count })}
 										disabled={count > Math.max(1, Math.floor(roomState.players.length / 2))}
 										className={cn(
-											"flex-1 py-3 text-sm font-black rounded-xl border-2 transition-colors",
+											"cursor-pointer flex-1 py-3 text-sm font-black rounded-xl border-2 transition-colors",
 											roomState.settings.impostorCount === count
 												? "bg-yellow-400 border-yellow-500 text-indigo-900 shadow-inner"
 												: "bg-indigo-50 border-indigo-200 text-indigo-400 hover:bg-indigo-100 disabled:opacity-50",
@@ -148,7 +148,7 @@ export function LobbyView() {
 
 					<div>
 						<label className="text-xs font-black text-indigo-400 uppercase tracking-widest flex justify-between mb-3">
-							<span>Turn Time</span>
+							<span>Clue Time</span>
 							<span className="text-indigo-900">{roomState.settings.clueTimeLimit}s</span>
 						</label>
 						{isHost ? (
@@ -159,7 +159,7 @@ export function LobbyView() {
 								step="10"
 								value={roomState.settings.clueTimeLimit}
 								onChange={(e) => updateSettings({ clueTimeLimit: parseInt(e.target.value) })}
-								className="w-full accent-yellow-500"
+								className="cursor-pointer w-full accent-yellow-500"
 							/>
 						) : (
 							<div className="h-3 bg-indigo-100 rounded-full overflow-hidden shadow-inner">
@@ -184,7 +184,7 @@ export function LobbyView() {
 								step="30"
 								value={roomState.settings.discussionTimeLimit}
 								onChange={(e) => updateSettings({ discussionTimeLimit: parseInt(e.target.value) })}
-								className="w-full accent-yellow-500"
+								className="cursor-pointer w-full accent-yellow-500"
 							/>
 						) : (
 							<div className="h-3 bg-indigo-100 rounded-full overflow-hidden shadow-inner">
@@ -204,7 +204,7 @@ export function LobbyView() {
 							<select
 								value={roomState.settings.category}
 								onChange={(e) => updateSettings({ category: e.target.value })}
-								className="w-full bg-indigo-50 border-2 border-indigo-200 rounded-xl px-4 py-3 font-bold text-indigo-900 appearance-none shadow-sm focus:outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/20"
+								className="cursor-pointer w-full bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 border-2 border-indigo-200 rounded-xl px-4 py-3 font-bold text-indigo-900 appearance-none shadow-sm focus:outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/20"
 							>
 								<option value="Random">Random</option>
 								{Object.keys(CATEGORIES).map((cat) => (
@@ -229,7 +229,7 @@ export function LobbyView() {
 								<button
 									onClick={() => updateSettings({ roundMode: "short" })}
 									className={cn(
-										"p-3 rounded-xl border-2 text-left transition-all",
+										"cursor-pointer p-3 rounded-xl border-2 text-left transition-all",
 										roomState.settings.roundMode === "short"
 											? "bg-yellow-400 border-yellow-500 shadow-inner"
 											: "bg-indigo-50 border-indigo-100 hover:bg-indigo-100",
@@ -259,7 +259,7 @@ export function LobbyView() {
 								<button
 									onClick={() => updateSettings({ roundMode: "long" })}
 									className={cn(
-										"p-3 rounded-xl border-2 text-left transition-all",
+										"cursor-pointer p-3 rounded-xl border-2 text-left transition-all",
 										roomState.settings.roundMode === "long"
 											? "bg-yellow-400 border-yellow-500 shadow-inner"
 											: "bg-indigo-50 border-indigo-100 hover:bg-indigo-100",
@@ -312,7 +312,7 @@ export function LobbyView() {
 										})
 									}
 									className={cn(
-										"w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
+										"cursor-pointer w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
 										roomState.settings.hintMode !== "none" ? "bg-yellow-400" : "bg-indigo-200",
 									)}
 								>
@@ -338,7 +338,7 @@ export function LobbyView() {
 				<button
 					onClick={startGame}
 					disabled={!canStart}
-					className="w-full bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:bg-indigo-800 disabled:text-indigo-400 disabled:border-transparent text-white font-black text-xl py-5 px-6 rounded-3xl flex items-center justify-center space-x-2 transition-transform active:translate-y-1 shadow-xl border-b-4 border-pink-700 active:border-b-0 uppercase tracking-widest mt-auto shrink-0"
+					className="cursor-pointer w-full bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:bg-indigo-800 disabled:text-indigo-400 disabled:border-transparent text-white font-black text-xl py-5 px-6 rounded-3xl flex items-center justify-center space-x-2 transition-transform active:translate-y-1 shadow-xl border-b-4 border-pink-700 active:border-b-0 uppercase tracking-widest mt-auto shrink-0"
 				>
 					<span>Start Game</span>
 					<Play className="w-6 h-6 fill-current" />

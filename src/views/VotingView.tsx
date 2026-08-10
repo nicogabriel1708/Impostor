@@ -67,7 +67,9 @@ export function VotingView() {
 							Your Clue
 						</div>
 						<div className="text-xl font-black text-white">
-							{[...roomState.clues].reverse().find((c) => c.playerId === sessionId)?.clue ||
+							{[...roomState.clues]
+								.reverse()
+								.find((c) => c.playerId === sessionId && c.round === roomState.roundCount)?.clue ||
 								"No clue given"}
 						</div>
 					</div>
@@ -78,7 +80,9 @@ export function VotingView() {
 
 							// Find their clue
 							const theirClue =
-								[...roomState.clues].reverse().find((c) => c.playerId === p.id)?.clue ||
+								[...roomState.clues]
+									.reverse()
+									.find((c) => c.playerId === p.id && c.round === roomState.roundCount)?.clue ||
 								"No clue given";
 
 							return (

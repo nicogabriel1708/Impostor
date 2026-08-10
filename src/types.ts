@@ -20,6 +20,7 @@ export interface Player {
 	isHost: boolean;
 	connected: boolean;
 	isSpectator?: boolean;
+	wantsToSkipDiscussion?: boolean;
 }
 
 export interface GamePlayer extends Player {
