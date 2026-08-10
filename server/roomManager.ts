@@ -300,7 +300,7 @@ export class Room {
 		if (this.turnQueue.length === 0) {
 			if (this.currentTurnPlayerId !== null) {
 				this.currentTurnPlayerId = null;
-				this.setPhase("CluePhase", 4); // Wait 4 seconds before discussion
+				this.setPhase("CluePhase", 5); // Wait 5 seconds before discussion
 				return;
 			}
 			this.startDiscussionPhase();

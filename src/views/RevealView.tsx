@@ -1,4 +1,4 @@
-import { ArrowRight, Fish, Users } from "lucide-react";
+import { ArrowRight, Ghost, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { Timer } from "../components/Timer";
 import { cn } from "../lib/utils";
@@ -49,7 +49,7 @@ export function RevealView() {
 					{didPlayersWin ? (
 						<Users className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
 					) : (
-						<Fish className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
+						<Ghost className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
 					)}
 					<h1 className={cn("text-5xl font-black mb-2 uppercase italic tracking-tighter", textColor)}>
 						{title}
@@ -66,17 +66,43 @@ export function RevealView() {
 					)}
 
 					{isContinues && result.eliminatedPlayerIds.length > 0 && (
-						<div className="mt-4 text-lg font-bold uppercase tracking-wider text-white/90 bg-indigo-900/40 p-3 rounded-2xl border-2 border-indigo-400">
+						<div className="mt-6 flex flex-col space-y-3 w-full max-w-sm mx-auto">
 							{result.eliminatedPlayerIds.map((id) => {
 								const p = roomState.players.find((x) => x.id === id);
 								if (!p) return null;
-								// Since it continues, this player was NOT an impostor (if they were, the game would end or they'd win? Wait, if they were the ONLY impostor, players would win. If there are multiple impostors, one impostor eliminated means game continues but they were an impostor! But wait, if they were an impostor, we need to know. Oh, revealResult.impostors is empty if gameContinues!)
-								// Actually, the server doesn't send roles if gameContinues! We need to change the server to send the roles of eliminated players!
 								const role = result.eliminatedRoles?.[id];
-								const text = role === "impostor" ? "WAS an impostor!" : "was NOT an impostor!";
+								const isImpostor = role === "impostor";
 								return (
-									<div key={id} className={role === "impostor" ? "text-pink-400" : "text-green-400"}>
-										{p.name} {text}
+									<div
+										key={id}
+										className={cn(
+											"flex items-center space-x-3 p-3 rounded-[20px] border-4 shadow-sm text-left",
+											isImpostor
+												? "bg-pink-500/20 border-pink-400/50"
+												: "bg-emerald-500/20 border-emerald-400/50",
+										)}
+									>
+										<div
+											className={cn(
+												"w-12 h-12 rounded-[14px] flex items-center justify-center text-xl shrink-0 shadow-inner",
+												p.color,
+											)}
+										>
+											{p.avatar}
+										</div>
+										<div className="flex flex-col min-w-0">
+											<span className="font-black text-white uppercase tracking-wider text-base truncate">
+												{p.name}
+											</span>
+											<span
+												className={cn(
+													"text-xs font-black uppercase tracking-widest",
+													isImpostor ? "text-pink-300" : "text-emerald-300",
+												)}
+											>
+												{isImpostor ? "Was an impostor!" : "Was NOT an impostor!"}
+											</span>
+										</div>
 									</div>
 								);
 							})}

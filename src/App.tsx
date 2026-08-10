@@ -42,7 +42,7 @@ function GameRouter() {
 export default function App() {
 	return (
 		<GameProvider>
-			<div className="h-screen h-dvh bg-indigo-900 text-white font-sans selection:bg-yellow-400/30 overflow-hidden flex justify-center items-center p-0 md:p-6">
+			<div className="h-[100dvh] max-h-[100dvh] bg-indigo-900 text-white font-sans selection:bg-yellow-400/30 overflow-hidden flex justify-center items-center p-0 md:p-6">
 				<main className="w-full max-w-2xl h-full flex flex-col relative overflow-hidden bg-indigo-600 shadow-2xl md:rounded-[40px] md:border-[8px] border-indigo-800">
 					<GameRouter />
 				</main>
