@@ -1,4 +1,4 @@
-import { ArrowRight, Ghost, Users } from "lucide-react";
+import { ArrowRight, Ghost, Scale, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { Timer } from "../components/Timer";
 import { cn } from "../lib/utils";
@@ -47,7 +47,9 @@ export function RevealView() {
 					transition={{ type: "spring", bounce: 0.5 }}
 				>
 					<div className="inline-flex flex-col items-start text-left mb-4">
-						{didPlayersWin ? (
+						{didTie ? (
+							<Scale className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
+						) : didPlayersWin ? (
 							<Users className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
 						) : (
 							<Ghost className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
@@ -92,7 +94,7 @@ export function RevealView() {
 										>
 											{p.avatar}
 										</div>
-										<div className="flex flex-col min-w-0 space-y-2 py-0.5">
+										<div className="flex flex-col min-w-0 space-y-4 py-0.5">
 											<span className="font-black text-white uppercase tracking-wider text-base truncate leading-none">
 												{p.name}
 											</span>

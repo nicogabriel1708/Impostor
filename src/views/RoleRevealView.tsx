@@ -74,14 +74,14 @@ export function RoleRevealView() {
 										Blend in. Don't get caught.
 									</p>
 
-									{roomState.myHint && (
-										<div className="bg-pink-900/40 border-4 border-pink-400/50 rounded-[20px] p-4 w-full shadow-inner">
-											<p className="text-xs font-black text-pink-200 uppercase tracking-widest mb-1">
-												Hint
-											</p>
+									<div className="bg-pink-900/40 border-4 border-pink-400/50 rounded-[20px] p-4 w-full shadow-inner flex flex-col items-center">
+										<p className="text-xs font-black text-pink-200 uppercase tracking-widest mb-1">
+											Category: {roomState.secretCategory || roomState.settings.category}
+										</p>
+										{roomState.myHint && (
 											<p className="text-2xl font-black text-white">{roomState.myHint}</p>
-										</div>
-									)}
+										)}
+									</div>
 								</>
 							) : (
 								<>
@@ -95,7 +95,7 @@ export function RoleRevealView() {
 
 									<div className="bg-indigo-50 border-4 border-indigo-100 rounded-[20px] p-4 w-full shadow-inner">
 										<p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">
-											Category: {roomState.settings.category}
+											Category: {roomState.secretCategory || roomState.settings.category}
 										</p>
 										<p className="text-4xl font-black text-indigo-900 uppercase tracking-tighter">
 											{roomState.myWord}

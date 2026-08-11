@@ -52,9 +52,7 @@ export function CluePhaseView() {
 			<div className="p-6 pb-4 bg-indigo-600 z-10 sticky top-0 shadow-md">
 				<div className="flex justify-between items-center bg-indigo-700/50 p-4 rounded-3xl border-2 border-indigo-500/30">
 					<div className="flex flex-col">
-						<h2 className="text-sm font-black tracking-widest text-indigo-200 uppercase">
-							{me?.isSpectator ? "Spectating" : "Clue Phase"}
-						</h2>
+						<h2 className="text-sm font-black tracking-widest text-indigo-200 uppercase">Clue Phase</h2>
 					</div>
 					<Timer endsAt={roomState.timerEndsAt} />
 				</div>
@@ -66,7 +64,7 @@ export function CluePhaseView() {
 					<span className="text-lg font-black text-white">
 						{roomState.myWord ||
 							roomState.myHint ||
-							(me?.isSpectator ? "Spectating" : "You are the Impostor")}
+							(me?.isSpectator ? roomState.secretWord : "You are the Impostor")}
 					</span>
 				</div>
 			</div>
@@ -176,7 +174,7 @@ export function CluePhaseView() {
 					) : (
 						<div className="flex items-center justify-center space-x-3 py-4 text-indigo-300 font-black uppercase tracking-widest">
 							<CheckCircle2 className="w-6 h-6" strokeWidth={3} />
-							<span>Not your turn</span>
+							<span>{me?.isSpectator ? "You are a spectator" : "Not your turn"}</span>
 						</div>
 					)}
 				</div>
