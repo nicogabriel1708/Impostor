@@ -1,4 +1,4 @@
-import { Eye, Fish } from "lucide-react";
+import { Eye, Ghost } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { Timer } from "../components/Timer";
@@ -66,7 +66,7 @@ export function RoleRevealView() {
 								</>
 							) : isImpostor ? (
 								<>
-									<Fish className="w-24 h-24 text-white mb-6 drop-shadow-xl" strokeWidth={3} />
+									<Ghost className="w-24 h-24 text-white mb-6 drop-shadow-xl" strokeWidth={3} />
 									<h1 className="text-4xl font-black mb-2 uppercase italic tracking-tighter">
 										You are the Impostor
 									</h1>

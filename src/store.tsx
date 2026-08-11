@@ -183,6 +183,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		socket.emit("chat_message", { roomCode, text });
 	};
 
+	const toggleSkipDiscussion = () => {
+		if (!socket || !roomCode) return;
+		socket.emit("toggle_skip_discussion", { roomCode });
+	};
+
 	const kickPlayer = (targetId: string) => {
 		if (!socket || !roomCode) return;
 		socket.emit("kick_player", { roomCode, targetId });
@@ -208,6 +213,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 				nextRound,
 				sendChatMessage,
 				kickPlayer,
+				toggleSkipDiscussion,
 				error,
 				clearError: () => setError(null),
 			}}

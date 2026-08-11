@@ -46,14 +46,16 @@ export function RevealView() {
 					animate={{ scale: 1, opacity: 1 }}
 					transition={{ type: "spring", bounce: 0.5 }}
 				>
-					{didPlayersWin ? (
-						<Users className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
-					) : (
-						<Ghost className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
-					)}
-					<h1 className={cn("text-5xl font-black mb-2 uppercase italic tracking-tighter", textColor)}>
-						{title}
-					</h1>
+					<div className="inline-flex flex-col items-start text-left mb-4">
+						{didPlayersWin ? (
+							<Users className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
+						) : (
+							<Ghost className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
+						)}
+						<h1 className={cn("text-5xl font-black uppercase italic tracking-tighter", textColor)}>
+							{title}
+						</h1>
+					</div>
 					{!isContinues && (
 						<p
 							className={cn(
@@ -90,13 +92,13 @@ export function RevealView() {
 										>
 											{p.avatar}
 										</div>
-										<div className="flex flex-col min-w-0">
-											<span className="font-black text-white uppercase tracking-wider text-base truncate">
+										<div className="flex flex-col min-w-0 space-y-2 py-0.5">
+											<span className="font-black text-white uppercase tracking-wider text-base truncate leading-none">
 												{p.name}
 											</span>
 											<span
 												className={cn(
-													"text-xs font-black uppercase tracking-widest",
+													"text-xs font-black uppercase tracking-widest leading-none",
 													isImpostor ? "text-pink-300" : "text-emerald-300",
 												)}
 											>

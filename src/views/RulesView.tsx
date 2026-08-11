@@ -31,38 +31,47 @@ export function RulesView({ onClose }: { onClose: () => void }) {
 	];
 
 	return (
-		<div className="absolute inset-0 z-50 bg-indigo-600 flex flex-col p-6 overflow-y-auto">
-			<div className="flex items-center justify-between mb-8">
-				<button
-					onClick={onClose}
-					className="cursor-pointer w-12 h-12 bg-indigo-500 hover:bg-indigo-400 rounded-[16px] flex items-center justify-center text-white transition-colors border-2 border-indigo-400 shadow-inner"
-				>
-					<ArrowLeft className="w-6 h-6" strokeWidth={3} />
-				</button>
-				<h2 className="text-xl font-black text-white uppercase tracking-widest italic mt-1.5">How to Play</h2>
-				<div className="w-12 h-12" /> {/* spacer for centering */}
-			</div>
-
-			<div className="space-y-4 flex-1">
-				{rules.map((rule, idx) => (
-					<motion.div
-						key={idx}
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: idx * 0.1 }}
-						className={cn(
-							"p-5 rounded-[24px] border-4 shadow-lg text-indigo-900 flex items-center space-x-4",
-							rule.color,
-						)}
+		<motion.div
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			exit={{ opacity: 0 }}
+			className="absolute inset-0 z-50 bg-indigo-600 overflow-y-auto p-6"
+		>
+			<div className="flex flex-col min-h-full">
+				<div className="flex items-center justify-between mb-6 shrink-0">
+					<button
+						onClick={onClose}
+						className="cursor-pointer w-12 h-12 bg-indigo-500 hover:bg-indigo-400 rounded-[16px] flex items-center justify-center text-white transition-colors border-2 border-indigo-400 shadow-inner"
 					>
-						<div className="shrink-0">{rule.icon}</div>
-						<div>
-							<h3 className="font-black text-lg uppercase tracking-wider mb-1">{rule.title}</h3>
-							<p className="font-bold text-sm text-indigo-900/80 leading-relaxed">{rule.desc}</p>
-						</div>
-					</motion.div>
-				))}
+						<ArrowLeft className="w-6 h-6" strokeWidth={3} />
+					</button>
+					<h2 className="text-xl font-black text-white uppercase tracking-widest italic mt-1.5">
+						How to Play
+					</h2>
+					<div className="w-12 h-12" /> {/* spacer for centering */}
+				</div>
+
+				<div className="space-y-4 flex-1 pb-8">
+					{rules.map((rule, idx) => (
+						<motion.div
+							key={idx}
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: idx * 0.1 }}
+							className={cn(
+								"p-5 rounded-[24px] border-4 shadow-lg text-indigo-900 flex items-center space-x-4",
+								rule.color,
+							)}
+						>
+							<div className="shrink-0">{rule.icon}</div>
+							<div>
+								<h3 className="font-black text-lg uppercase tracking-wider mb-1">{rule.title}</h3>
+								<p className="font-bold text-sm text-indigo-900/80 leading-relaxed">{rule.desc}</p>
+							</div>
+						</motion.div>
+					))}
+				</div>
 			</div>
-		</div>
+		</motion.div>
 	);
 }

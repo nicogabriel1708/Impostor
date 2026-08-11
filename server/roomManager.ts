@@ -86,7 +86,7 @@ export class Room {
 				wantsToSkipDiscussion: p.wantsToSkipDiscussion,
 			})),
 			myRole: player?.role,
-			myWord: player?.word,
+			myWord: player && player.isSpectator ? this.secretWord : player?.word,
 			myHint: player?.hint,
 			secretCategory: this.secretCategory,
 			myVote: player?.vote,
