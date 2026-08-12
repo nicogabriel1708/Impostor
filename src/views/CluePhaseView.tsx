@@ -2,6 +2,7 @@ import { CheckCircle2, Send } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
 import { Timer } from "../components/Timer";
+import { audio } from "../lib/audio";
 import { cn } from "../lib/utils";
 import { useGame } from "../store";
 
@@ -17,6 +18,20 @@ export function CluePhaseView() {
 	const me = roomState.players.find((p) => p.id === sessionId);
 
 	const inputRef = useRef<HTMLInputElement>(null);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const prevCluesLength = useRef(0);
+
+	useEffect(() => {
+		const cluesCount = roomState.clues?.length || 0;
+		if (cluesCount > prevCluesLength.current && prevCluesLength.current > 0) {
+			audio.playClueAdded();
+		}
+		prevCluesLength.current = cluesCount;
+	}, [roomState.clues?.length]);
+
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [roomState?.clues, roomState?.currentTurnPlayerId]);
 
 	useEffect(() => {
 		if (isMyTurn) {
@@ -69,7 +84,7 @@ export function CluePhaseView() {
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
+			<div className="flex-1 overflow-y-auto p-6 space-y-4 pb-48">
 				<AnimatePresence initial={false}>
 					{(roomState.clues || [])
 						.filter((c) => c.round === (roomState.roundCount || 1))
@@ -126,7 +141,7 @@ export function CluePhaseView() {
 					<motion.div
 						initial={{ opacity: 0, scale: 0.9 }}
 						animate={{ opacity: 1, scale: 1 }}
-						className="p-4 rounded-[30px] border-4 border-dashed border-indigo-400 bg-indigo-500/20 flex flex-col items-center justify-center space-y-2 py-8"
+						className="p-4 rounded-[30px] border-4 border-dashed border-indigo-400 bg-indigo-500/20 flex flex-col items-center justify-center space-y-2 py-8 my-6"
 					>
 						<div
 							className={cn(
@@ -141,6 +156,7 @@ export function CluePhaseView() {
 						</div>
 					</motion.div>
 				)}
+				<div ref={messagesEndRef} className="h-4" />
 			</div>
 
 			{/* Input Area */}

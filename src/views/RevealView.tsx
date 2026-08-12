@@ -1,11 +1,17 @@
 import { ArrowRight, Ghost, Scale, Users } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect } from "react";
 import { Timer } from "../components/Timer";
+import { audio } from "../lib/audio";
 import { cn } from "../lib/utils";
 import { useGame } from "../store";
 
 export function RevealView() {
 	const { roomState, sessionId, nextRound } = useGame();
+
+	useEffect(() => {
+		audio.playReveal();
+	}, []);
 
 	if (!roomState || !roomState.revealResult) return null;
 
@@ -17,10 +23,13 @@ export function RevealView() {
 	const didTie = result.winners === "tie";
 
 	const isContinues = result.gameContinues;
+	const eliminatedNames = result.eliminatedPlayerIds
+		.map((id) => roomState.players.find((p) => p.id === id)?.name)
+		.filter(Boolean);
 	const title = isContinues
 		? didTie
 			? "It's a Tie!"
-			: "Voting Results"
+			: `${eliminatedNames.join(" & ")} Voted Out`
 		: didTie
 			? "It's a Tie!"
 			: didPlayersWin
@@ -49,7 +58,7 @@ export function RevealView() {
 					<div className="inline-flex flex-col items-start text-left mb-4">
 						{didTie ? (
 							<Scale className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
-						) : didPlayersWin ? (
+						) : didPlayersWin || isContinues ? (
 							<Users className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
 						) : (
 							<Ghost className={cn("w-24 h-24 mb-4 drop-shadow-md", textColor)} strokeWidth={2.5} />
@@ -70,7 +79,7 @@ export function RevealView() {
 					)}
 
 					{isContinues && result.eliminatedPlayerIds.length > 0 && (
-						<div className="mt-6 flex flex-col space-y-3 w-full max-w-sm mx-auto">
+						<div className="my-10 flex flex-col space-y-3 w-full max-w-sm mx-auto">
 							{result.eliminatedPlayerIds.map((id) => {
 								const p = roomState.players.find((x) => x.id === id);
 								if (!p) return null;
@@ -113,7 +122,7 @@ export function RevealView() {
 						</div>
 					)}
 					{isContinues && result.eliminatedPlayerIds.length === 0 && (
-						<div className="mt-4 text-lg font-bold uppercase tracking-wider text-white/90 bg-indigo-900/40 p-3 rounded-2xl border-2 border-indigo-400">
+						<div className="my-10 text-lg font-bold uppercase tracking-wider text-white/90 bg-indigo-900/40 p-5 rounded-2xl border-4 border-indigo-400/50 shadow-inner">
 							No one was eliminated!
 						</div>
 					)}
